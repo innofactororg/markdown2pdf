@@ -1,0 +1,201 @@
+---
+name: 🧳 Build Documentation
+
+on:
+  workflow_call:
+    # Map the workflow outputs to job outputs
+    outputs:
+      firstword:
+        description: "The first output string"
+        value: ${{ jobs.example_job.outputs.output1 }}
+      secondword:
+        description: "The second output string"
+        value: ${{ jobs.example_job.outputs.output2 }}
+
+jobs:
+  example_job:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+    # Map the job outputs to step outputs
+    outputs:
+      output1: ${{ steps.step1.outputs.firstword }}
+      output2: ${{ steps.step2.outputs.secondword }}
+    steps:
+      - id: step1
+        run: echo "::set-output name=firstword::hello"
+      - id: step2
+        run: echo "::set-output name=secondword::world"
+
+      - name: Setup pandoc
+        env:
+          PANDOC_VERSION: "2.18"
+        run: |
+          wget -qO- "https://github.com/jgm/pandoc/releases/download/${PANDOC_VERSION}/pandoc-${PANDOC_VERSION}-linux-amd64.tar.gz" | sudo tar xzf - --strip-components 1 -C "/usr/local/"
+
+      - name: Setup TeX Live
+        uses: teatimeguest/setup-texlive-action@v2
+        with:
+          packages: >-
+            ae
+            amscls
+            amsmath
+            babel
+            babel-english
+            babel-german
+            babelbib
+            bookmark
+            carlisle
+            colortbl
+            fancyhdr
+            fix2col
+            geometry
+            graphics
+            graphics-cfg
+            hyperref
+            latex
+            latex-bin
+            latex-fonts
+            latexconfig
+            ltxmisc
+            mfnfss
+            mptopdf
+            natbib
+            oberdiek
+            pslatex
+            psnfss
+            pspicture
+            tools
+            url
+            anysize
+            beamer
+            booktabs
+            breqn
+            caption
+            cite
+            cmap
+            crop
+            ctable
+            eso-pic
+            euenc
+            euler
+            etoolbox
+            extsizes
+            fancybox
+            fancyref
+            fancyvrb
+            filehook
+            float
+            fontspec
+            fp
+            index
+            jknapltx
+            koma-script
+            latexbug
+            l3experimental
+            l3kernel
+            l3packages
+            lineno
+            listings
+            lwarp
+            mathspec
+            mathtools
+            mdwtools
+            memoir
+            metalogo
+            microtype
+            ms
+            ntgclass
+            parskip
+            pdfpages
+            polyglossia
+            powerdot
+            psfrag
+            rcs
+            sansmath
+            section
+            seminar
+            sepnum
+            setspace
+            subfig
+            textcase
+            thumbpdf
+            translator
+            typehtml
+            ucharcat
+            underscore
+            unicode-math
+            xcolor
+            xkeyval
+            xltxtra
+            xunicode
+            adjustbox
+            background
+            bidi
+            collectbox
+            csquotes
+            everypage
+            filehook
+            footmisc
+            footnotebackref
+            framed
+            fvextra
+            letltxmacro
+            ly1
+            mdframed
+            mweights
+            needspace
+            pagecolor
+            sourcecodepro
+            sourcesanspro
+            titling
+            ucharcat
+            ulem
+            unicode-math
+            upquote
+            xecjk
+            xurl
+            zref
+            awesomebox
+            fontawesome5
+            tcolorbox
+            pgf
+            etoolbox
+            environ
+            trimspaces
+            lastpage
+            enumitem
+
+      - name: Initialization for tlmgr
+        run: |
+          sudo apt-get update -qq && sudo apt-get install xzdec -y
+          tlmgr init-usertree
+
+      - name: Setup fonts and image conversion tool
+        run: sudo apt-get update -qq && sudo apt-get install fonts-noto-cjk poppler-utils fonts-crosextra-carlito fonts-crosextra-caladea -y
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+          architecture: "x64"
+
+      - name: Install python filters
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandoc-latex-environment
+
+      - name: Build PDF
+        shell: pwsh
+        run: |
+          $Global:ProgressPreference = 'SilentlyContinue';
+          & docs/build.ps1 -OrderFile markdown/design-document.order -MetadataFile markdown/design-document.yaml -Template templates/design-document.tex -OutFile design-document.pdf
+
+      - name: Publish PDF
+        uses: actions/upload-artifact@v2
+        with:
+          name: docs
+          if-no-files-found: error
+          retention-days: 5
+          path: "${{ github.workspace }}/design-document.pdf"
