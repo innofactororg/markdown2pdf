@@ -186,12 +186,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install pandoc-latex-environment
 
-      - name: Setup upterm debug session
-        uses: lhotari/action-upterm@v1
-        with:
-          ## limits ssh access and adds the ssh public key for the user which triggered the workflow
-          limit-access-to-actor: false
+      # - name: Setup upterm debug session
+      #   uses: lhotari/action-upterm@v1
+      #   with:
+      #     ## limits ssh access and adds the ssh public key for the user which triggered the workflow
+      #     limit-access-to-actor: false
 
+      - name: Clone repository for building
+        uses: actions/checkout@v3
+          
       - name: Build PDF
         shell: pwsh
         run: |
