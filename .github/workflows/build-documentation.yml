@@ -207,6 +207,9 @@ jobs:
       - name: Download the build script
         run: curl -o docs/build-docs.ps1 https://raw.githubusercontent.com/innofactororg/workflows/main/scripts/build-docs.sh
 
+      - name: Create Template area
+        run: mkdir docs/templates
+
       - name: Download the Cover Image
         run: curl -o docs/templates/cover.png https://raw.githubusercontent.com/innofactororg/workflows/main/templates/cover.png
 
