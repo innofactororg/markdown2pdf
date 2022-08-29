@@ -225,9 +225,6 @@ jobs:
       - name: Give script permissions
         run: chmod +x docs/build-docs.ps1
 
-      - name: debug - variables
-        run: echo OrderFile ${{ inputs.OrderFile }} MetadataFile ${{ inputs.MetadataFile }} Template ${{ inputs.Template }} OutFile ${{ inputs.OutFile }}
-
       # - name: Setup upterm debug session
       #   uses: lhotari/action-upterm@v1
       #   with:
