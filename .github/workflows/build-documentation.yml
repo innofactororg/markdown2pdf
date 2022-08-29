@@ -199,26 +199,26 @@ jobs:
           python -m pip install --upgrade pip
           pip install pandoc-latex-environment
 
-      # - name: Setup upterm debug session
-      #   uses: lhotari/action-upterm@v1
-      #   with:
-      #     ## limits ssh access and adds the ssh public key for the user which triggered the workflow
-      #     limit-access-to-actor: false
-
       - name: Clone repository for building
         uses: actions/checkout@v3
 
       - name: Download the build script
-        run: curl -o $PWD/docs/build-docs.sh https://raw.githubusercontent.com/innofactororg/workflows/main/scripts/build-docs.sh
+        run: curl -o docs/build-docs.sh https://raw.githubusercontent.com/innofactororg/workflows/main/scripts/build-docs.sh
+
+      - name: Give script permissions
+        run: chmod +x docs/build-docs.sh
+
+      - name: Setup upterm debug session
+        uses: lhotari/action-upterm@v1
+        with:
+          ## limits ssh access and adds the ssh public key for the user which triggered the workflow
+          limit-access-to-actor: true
 
       - name: Build PDF
         shell: pwsh
         run: |
           $Global:ProgressPreference = 'SilentlyContinue';
           & docs/build-docs.ps1 -OrderFile ${{ inputs.OrderFile }} -MetadataFile ${{ inputs.MetadataFile }} -Template ${{ inputs.Template }} -OutFile ${{ inputs.OutFile }}
-
-      - name: Give script permissions
-        run: chmod +x $PWD/docs/build-docs.sh
 
       - name: Publish PDF
         uses: actions/upload-artifact@v2
