@@ -1,0 +1,33 @@
+---
+title: Azure Cloud Framework
+subtitle: DESIGN DOCUMENT
+project: 801800
+geometry: a4paper,left=2.54cm,right=2.54cm,top=1.91cm,bottom=2.54cm
+titlepage: true
+titlepage-color: FFFFFF
+titlepage-text-color: 5F5F5F
+titlepage-top-cover-image: "../templates/cover.png"
+logo: "../templates/logo.png"
+colorlinks: true
+page-background:
+page-background-opacity:
+block-headings: true
+links-as-notes: true
+lot: false
+lof: false
+toc: true
+toc-own-page: true
+toc-title: Table of Contents
+tables: true
+table-use-row-colors: false
+listings-disable-line-numbers: false
+listings-no-page-break: false
+disable-header-and-footer: false
+footer-center: 'Page (\thepage ) of \pageref{LastPage}'
+disclaimer: This document contains business and trade secrets (essential information about Innofactor's business) and is therefore totally confidential. Confidentiality does not apply to pricing information
+pandoc-latex-environment:
+  noteblock: [note]
+  tipblock: [tip]
+  warningblock: [warning]
+  cautionblock: [caution]
+  importantblock: [important]
