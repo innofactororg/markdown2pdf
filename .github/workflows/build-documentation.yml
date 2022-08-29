@@ -207,12 +207,18 @@ jobs:
 
       - name: Clone repository for building
         uses: actions/checkout@v3
-          
+
+      - name: Download the build script
+        run: curl -o $PWD/docs/build-docs.sh https://raw.githubusercontent.com/innofactororg/workflows/main/scripts/build-docs.sh
+
       - name: Build PDF
         shell: pwsh
         run: |
           $Global:ProgressPreference = 'SilentlyContinue';
-          & docs/build.ps1 -OrderFile ${{ inputs.OrderFile }} -MetadataFile ${{ inputs.MetadataFile }} -Template ${{ inputs.Template }} -OutFile ${{ inputs.OutFile }}
+          & docs/build-docs.ps1 -OrderFile ${{ inputs.OrderFile }} -MetadataFile ${{ inputs.MetadataFile }} -Template ${{ inputs.Template }} -OutFile ${{ inputs.OutFile }}
+
+      - name: Give script permissions
+        run: chmod +x $PWD/docs/build-docs.sh
 
       - name: Publish PDF
         uses: actions/upload-artifact@v2
