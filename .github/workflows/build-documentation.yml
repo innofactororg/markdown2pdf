@@ -243,4 +243,4 @@ jobs:
           name: docs
           if-no-files-found: error
           retention-days: 5
-          path: "${{ github.workspace }}/design-document.pdf"
+          path: "${{ github.workspace }}/${{ inputs.OutFile }}"
