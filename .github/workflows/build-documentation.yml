@@ -11,11 +11,11 @@ on:
       MetadataFile:
         required: false
         type: string
-        default: .template/azure-document.yaml
+        default: action-default-metadata.yaml
       Template:
         required: false
         type: string
-        default: .template/azure-document.tex
+        default: action-default-template.tex
       OutFile:
         required: true
         type: string
@@ -42,6 +42,20 @@ jobs:
         run: echo "::set-output name=firstword::hello"
       - id: step2
         run: echo "::set-output name=secondword::world"
+
+      - name: Dump GitHub context
+        id: github_context_step
+        run: echo '${{ toJSON(github) }}'
+      - name: Dump job context
+        run: echo '${{ toJSON(job) }}'
+      - name: Dump steps context
+        run: echo '${{ toJSON(steps) }}'
+      - name: Dump runner context
+        run: echo '${{ toJSON(runner) }}'
+      - name: Dump strategy context
+        run: echo '${{ toJSON(strategy) }}'
+      - name: Dump matrix context
+        run: echo '${{ toJSON(matrix) }}'
 
       - name: Setup pandoc
         env:
@@ -204,32 +218,36 @@ jobs:
       - name: Clone repository for building
         uses: actions/checkout@v3
 
-      - name: Download the build script
-        run: curl -o docs/build-docs.ps1 https://raw.githubusercontent.com/innofactororg/workflows/main/scripts/build-docs.ps1
-
       - name: Create Template area
-        run: mkdir .template
+        run: mkdir ${{ runner.temp }}/.pandoc-latex
+
+      - name: Download the build script
+        run: curl -o ${{ runner.temp }}/.pandoc-latex/build-docs.ps1 https://raw.githubusercontent.com/innofactororg/workflows/main/scripts/build-docs.ps1
+
+      - name: Download the Default LaTeX Template
+        if: ${{ inputs.Template == 'action-default-template.tex' }}
+        run: curl -o ${{ runner.temp }}/.pandoc-latex/action-default-template.tex https://raw.githubusercontent.com/innofactororg/workflows/main/templates/azure-document.tex
+
+      - name: Download the Default Pandoc Template
+        if: ${{ inputs.MetadataFile == 'action-default-metadata.yaml' }}
+        run: curl -o ${{ runner.temp }}/.pandoc-latex/action-default-metadata.yaml https://raw.githubusercontent.com/innofactororg/workflows/main/templates/azure-document.yaml
 
       - name: Download the Cover Image
-        run: curl -o .template/cover.png https://raw.githubusercontent.com/innofactororg/workflows/main/templates/cover.png
+        if: ${{ inputs.MetadataFile == 'action-default-metadata.yaml' }}
+        run: curl -o ${{ runner.temp }}/.pandoc-latex/cover.png https://raw.githubusercontent.com/innofactororg/workflows/main/templates/cover.png
 
       - name: Download the Logo
-        run: curl -o .template/logo.png https://raw.githubusercontent.com/innofactororg/workflows/main/templates/logo.png
-
-      - name: Download the LaTeX Template
-        run: curl -o .template/azure-document.tex https://raw.githubusercontent.com/innofactororg/workflows/main/templates/azure-document.tex
-
-      - name: Download the Pandoc Template
-        run: curl -o .template/azure-document.yaml https://raw.githubusercontent.com/innofactororg/workflows/main/templates/azure-document.yaml
+        if: ${{ inputs.MetadataFile == 'action-default-metadata.yaml' }}
+        run: curl -o ${{ runner.temp }}/.pandoc-latex/logo.png https://raw.githubusercontent.com/innofactororg/workflows/main/templates/logo.png
 
       - name: Give script permissions
         run: chmod +x docs/build-docs.ps1
 
-      # - name: Setup upterm debug session
-      #   uses: lhotari/action-upterm@v1
-      #   with:
-      #     ## limits ssh access and adds the ssh public key for the user which triggered the workflow
-      #     limit-access-to-actor: false
+      - name: Setup upterm debug session
+        uses: lhotari/action-upterm@v1
+        with:
+          ## limits ssh access and adds the ssh public key for the user which triggered the workflow
+          limit-access-to-actor: false
 
       - name: Build PDF
         shell: pwsh
