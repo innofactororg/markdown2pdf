@@ -253,7 +253,7 @@ jobs:
         shell: pwsh
         run: | 
           $Global:ProgressPreference = 'SilentlyContinue';
-          & ${{ runner.workspace }}/.pandoc-latex/build-pdf.ps1 -OrderFile ${{ inputs.OrderFile }} -MetadataFile ${{ inputs.MetadataFile }} -Template ${{ inputs.Template }} -OutFile ${{ inputs.OutFile }}
+          & ${{ runner.workspace }}/.pandoc-latex/build-pdf.ps1 -OrderFile ${{ runner.workspace }}/${{ inputs.OrderFile }} -MetadataFile ${{ runner.workspace }}/${{ inputs.MetadataFile }} -Template ${{ runner.workspace }}/${{ inputs.Template }} -OutFile ${{ runner.workspace }}/${{ inputs.OutFile }}
 
       - name: Publish PDF
         uses: actions/upload-artifact@v2
@@ -261,4 +261,4 @@ jobs:
           name: docs
           if-no-files-found: error
           retention-days: 5
-          path: "${{ github.workspace }}/${{ inputs.OutFile }}"
+          path: "${{ runner.workspace }}/${{ inputs.OutFile }}"
