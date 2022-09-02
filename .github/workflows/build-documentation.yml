@@ -220,7 +220,7 @@ jobs:
         run: curl -o .template/azure-document.tex https://raw.githubusercontent.com/innofactororg/workflows/main/templates/azure-document.tex
 
       - name: Download the Pandoc Template
-        run: curl -o .templates/azure-document.yaml https://raw.githubusercontent.com/innofactororg/workflows/main/templates/azure-document.yaml
+        run: curl -o .template/azure-document.yaml https://raw.githubusercontent.com/innofactororg/workflows/main/templates/azure-document.yaml
 
       - name: Give script permissions
         run: chmod +x docs/build-docs.ps1
