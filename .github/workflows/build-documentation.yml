@@ -219,29 +219,29 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Create Template area
-        run: mkdir ${{ runner.workspace }}/.pandoc-latex
+        run: mkdir ${{ github.workspace }}/.pandoc-latex
 
       - name: Download the build script
-        run: curl -o ${{ runner.workspace }}/.pandoc-latex/build-pdf.ps1 https://raw.githubusercontent.com/innofactororg/workflows/main/scripts/build-pdf.ps1
+        run: curl -o ${{ github.workspace }}/.pandoc-latex/build-pdf.ps1 https://raw.githubusercontent.com/innofactororg/workflows/main/scripts/build-pdf.ps1
 
       - name: Download the Default LaTeX Template
         if: ${{ inputs.Template == '.pandoc-latex/action-default-template.tex' }}
-        run: curl -o ${{ runner.workspace }}/.pandoc-latex/action-default-template.tex https://raw.githubusercontent.com/innofactororg/workflows/main/templates/azure-document.tex
+        run: curl -o ${{ github.workspace }}/.pandoc-latex/action-default-template.tex https://raw.githubusercontent.com/innofactororg/workflows/main/templates/azure-document.tex
 
       - name: Download the Default Pandoc Template
         if: ${{ inputs.MetadataFile == '.pandoc-latex/action-default-metadata.yaml' }}
-        run: curl -o ${{ runner.workspace }}/.pandoc-latex/action-default-metadata.yaml https://raw.githubusercontent.com/innofactororg/workflows/main/templates/azure-document.yaml
+        run: curl -o ${{ github.workspace }}/.pandoc-latex/action-default-metadata.yaml https://raw.githubusercontent.com/innofactororg/workflows/main/templates/azure-document.yaml
 
       - name: Download the Cover Image
         if: ${{ inputs.MetadataFile == '.pandoc-latex/action-default-metadata.yaml' }}
-        run: curl -o ${{ runner.workspace }}/.pandoc-latex/cover.png https://raw.githubusercontent.com/innofactororg/workflows/main/templates/cover.png
+        run: curl -o ${{ github.workspace }}/.pandoc-latex/cover.png https://raw.githubusercontent.com/innofactororg/workflows/main/templates/cover.png
 
       - name: Download the Logo
         if: ${{ inputs.MetadataFile == '.pandoc-latex/action-default-metadata.yaml' }}
-        run: curl -o ${{ runner.workspace }}/.pandoc-latex/logo.png https://raw.githubusercontent.com/innofactororg/workflows/main/templates/logo.png
+        run: curl -o ${{ github.workspace }}/.pandoc-latex/logo.png https://raw.githubusercontent.com/innofactororg/workflows/main/templates/logo.png
 
       - name: Give script permissions
-        run: chmod +x ${{ runner.workspace }}/.pandoc-latex/build-pdf.ps1
+        run: chmod +x ${{ github.workspace }}/.pandoc-latex/build-pdf.ps1
 
       # - name: Setup upterm debug session
       #   uses: lhotari/action-upterm@v1
@@ -253,7 +253,7 @@ jobs:
         shell: pwsh
         run: | 
           $Global:ProgressPreference = 'SilentlyContinue';
-          & ${{ runner.workspace }}/.pandoc-latex/build-pdf.ps1 -OrderFile ${{ runner.workspace }}/${{ inputs.OrderFile }} -MetadataFile ${{ runner.workspace }}/${{ inputs.MetadataFile }} -Template ${{ runner.workspace }}/${{ inputs.Template }} -OutFile ${{ runner.workspace }}/${{ inputs.OutFile }}
+          & ${{ github.workspace }}/.pandoc-latex/build-pdf.ps1 -OrderFile ${{ github.workspace }}/${{ inputs.OrderFile }} -MetadataFile ${{ github.workspace }}/${{ inputs.MetadataFile }} -Template ${{ github.workspace }}/${{ inputs.Template }} -OutFile ${{ github.workspace }}/${{ inputs.OutFile }}
 
       - name: Publish PDF
         uses: actions/upload-artifact@v2
@@ -261,4 +261,4 @@ jobs:
           name: docs
           if-no-files-found: error
           retention-days: 5
-          path: "${{ runner.workspace }}/${{ inputs.OutFile }}"
+          path: "${{ github.workspace }}/${{ inputs.OutFile }}"
