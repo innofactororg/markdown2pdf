@@ -243,11 +243,11 @@ jobs:
       - name: Give script permissions
         run: chmod +x ${{ runner.workspace }}/.pandoc-latex/build-pdf.ps1
 
-      - name: Setup upterm debug session
-        uses: lhotari/action-upterm@v1
-        with:
-          ## limits ssh access and adds the ssh public key for the user which triggered the workflow
-          limit-access-to-actor: false
+      # - name: Setup upterm debug session
+      #   uses: lhotari/action-upterm@v1
+      #   with:
+      #     ## limits ssh access and adds the ssh public key for the user which triggered the workflow
+      #     limit-access-to-actor: false
 
       - name: Build PDF
         shell: pwsh
