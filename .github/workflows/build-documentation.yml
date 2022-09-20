@@ -189,7 +189,8 @@ jobs:
             trimspaces
             lastpage
             enumitem
-
+            rsvg-convert
+            
       - name: Initialization for tlmgr
         run: |
           sudo apt-get update -qq && sudo apt-get install xzdec -y
