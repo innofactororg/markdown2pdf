@@ -189,7 +189,6 @@ jobs:
             trimspaces
             lastpage
             enumitem
-            rsvg-convert
             
       - name: Initialization for tlmgr
         run: |
