@@ -8,6 +8,14 @@ on:
       OrderFile:
         required: true
         type: string
+      Title:
+        required: false
+        type: string
+        default: Azure Cloud Framework
+      Subtitle:
+        required: false
+        type: string
+        default: DESIGN DOCUMENT
       MetadataFile:
         required: false
         type: string
@@ -221,6 +229,12 @@ jobs:
 
       - name: Download the Pandoc Template
         run: curl -o docs/templates/azure-document.yaml https://raw.githubusercontent.com/innofactororg/workflows/main/templates/azure-document.yaml
+
+      - name: Update the Document Title
+        run: yq eval -i '.title = "${{ inputs.Title }}"' docs/templates/azure-document.yaml
+
+      - name: Update the Document Subtitle
+        run: yq eval -i '.subtitle = "${{ inputs.Subtitle }}"' docs/templates/azure-document.yaml
 
       - name: Give script permissions
         run: chmod +x docs/build-docs.ps1
