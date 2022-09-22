@@ -8,6 +8,14 @@ on:
       OrderFile:
         required: true
         type: string
+      Title:
+        required: false
+        type: string
+        default: Azure Cloud Framework
+      Subtitle:
+        required: false
+        type: string
+        default: DESIGN DOCUMENT
       MetadataFile:
         required: false
         type: string
@@ -181,7 +189,7 @@ jobs:
             trimspaces
             lastpage
             enumitem
-
+            
       - name: Initialization for tlmgr
         run: |
           sudo apt-get update -qq && sudo apt-get install xzdec -y
@@ -222,8 +230,20 @@ jobs:
       - name: Download the Pandoc Template
         run: curl -o docs/templates/azure-document.yaml https://raw.githubusercontent.com/innofactororg/workflows/main/templates/azure-document.yaml
 
+      - name: Update the Document Title
+        run: yq eval -i '.title = "${{ inputs.Title }}"' docs/templates/azure-document.yaml
+
+      - name: Update the Document Subtitle
+        run: yq eval -i '.subtitle = "${{ inputs.Subtitle }}"' docs/templates/azure-document.yaml
+
       - name: Give script permissions
         run: chmod +x docs/build-docs.ps1
+
+      # - name: Setup upterm session
+      #   uses: lhotari/action-upterm@v1
+      #   with:
+      #     ## limits ssh access and adds the ssh public key for the user which triggered the workflow
+      #     limit-access-to-actor: false
 
       - name: Build PDF
         shell: pwsh
@@ -234,7 +254,7 @@ jobs:
       - name: Publish PDF
         uses: actions/upload-artifact@v2
         with:
-          name: docs
+          name: ${{ inputs.OutFile }}
           if-no-files-found: error
           retention-days: 5
           path: "${{ github.workspace }}/${{ inputs.OutFile }}"

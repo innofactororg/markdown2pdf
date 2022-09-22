@@ -6,8 +6,8 @@ geometry: a4paper,left=2.54cm,right=2.54cm,top=1.91cm,bottom=2.54cm
 titlepage: true
 titlepage-color: FFFFFF
 titlepage-text-color: 5F5F5F
-titlepage-top-cover-image: "../templates/cover.png"
-logo: "../templates/logo.png"
+titlepage-top-cover-image: "docs/templates/cover.png"
+logo: "docs/templates/logo.png"
 colorlinks: true
 page-background:
 page-background-opacity:

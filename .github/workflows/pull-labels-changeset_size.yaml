@@ -1,0 +1,34 @@
+---
+name: "📁 Changeset Size"
+
+on: # yamllint disable-line rule:truthy
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  labeler:
+    name: Pull Changeset Size
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Labeler
+        uses: actions/labeler@v4
+        with:
+          configuration-path: .github/labeler.yaml
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Label Size
+        uses: pascalgn/size-label-action@v0.4.3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          sizes: >
+            {
+              "0": "XS",
+              "20": "S",
+              "50": "M",
+              "200": "L",
+              "800": "XL",
+              "2000": "XXL"
+            }

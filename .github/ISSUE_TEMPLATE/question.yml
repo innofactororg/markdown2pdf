@@ -1,0 +1,23 @@
+---
+name: Question
+description: Ask a question to the maintainer
+title: "[Question]: "
+labels: [question]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before opening a question, please search for the behaviour in the existing issues.
+
+        ---
+
+        Thank you for taking the time to file a query. To address process this as fast as possible, we need some information.
+        ---
+  - type: textarea
+    id: question-description
+    attributes:
+      label: Your Query
+      description: A clear and concise query of what you want to ask.
+    validations:
+      required: true
