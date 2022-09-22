@@ -1,0 +1,37 @@
+---
+name: Feature Request
+description: Suggest an idea for this project
+title: "[Feature]: "
+labels: [enhancement]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before opening a feature report, please search for the behaviour in the existing issues.
+
+        ---
+
+        Thank you for taking the time to file a feature suggestion. To address process this as fast as possible, we need some information.
+        ---
+  - type: textarea
+    id: feat-description
+    attributes:
+      label: Describe the solution you'd like
+      description: A clear and concise description of what you want to happen
+    validations:
+      required: true
+  - type: textarea
+    id: feat-references
+    attributes:
+      label: Relevant examples or references
+      description: Miscellaneous information that will assist in solving the issue
+    validations:
+      required: true
+  - type: textarea
+    id: feat-additional
+    attributes:
+      label: Additional information
+      description: Anything to give further context to the requested new feature.
+    validations:
+      required: true

@@ -1,0 +1,14 @@
+---
+area/github:
+  - ".github/**/*"
+area/module:
+  - "modules/**/*"
+area/vscode:
+  - ".vscode/**/*"
+area/tasks:
+  - ".tasks/**/*"
+area/documentation:
+  - "docs/**/*"
+area/definitions:
+  - "examples/**/*"
+  - "*.tf"
