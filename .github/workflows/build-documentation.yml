@@ -236,14 +236,23 @@ jobs:
       - name: Update the Document Subtitle
         run: yq eval -i '.subtitle = "${{ inputs.Subtitle }}"' docs/templates/azure-document.yaml
 
+      - name: Update the path to titlepage-top-cover-image
+        run: yq eval -i '.titlepage-top-cover-image = "../templates/cover.png"' docs/templates/azure-document.yaml
+
+      - name: Update the path to logo
+        run: yq eval -i '.logo = "../templates/logo.png"' docs/templates/azure-document.yaml
+
       - name: Give script permissions
         run: chmod +x docs/build-docs.ps1
 
-      - name: Setup upterm session
-        uses: lhotari/action-upterm@v1
-        with:
-          ## limits ssh access and adds the ssh public key for the user which triggered the workflow
-          limit-access-to-actor: false
+      # - name: Setup upterm session
+      #   uses: lhotari/action-upterm@v1
+      #   with:
+      #     ## limits ssh access and adds the ssh public key for the user which triggered the workflow
+      #     limit-access-to-actor: false
+
+      # Expanded Script Sample
+      # docs/build-docs.ps1 -OrderFile training/training.order -MetadataFile templates/azure-document.yaml -Template templates/azure-document.tex -OutFile training.pdf
 
       - name: Build PDF
         shell: pwsh
