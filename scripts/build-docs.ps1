@@ -55,9 +55,10 @@ $markdowncontent = $(
     $i++;
     $content = Get-Content -Path $file.FullName -Raw -Encoding utf8;
     # Require that the file begins with a first level title
-    if ($content -notmatch '^#\s\w') {
-      throw "The file $($file.Name) is not valid, it must begin with a first level title"
-    };
+    # Turning this off for now, want to use sub pages
+    # if ($content -notmatch '^#\s\w') {
+    #   throw "The file $($file.Name) is not valid, it must begin with a first level title"
+    # };
     # Require that the file ends with a line feed
     if ($content -notmatch '\n$') {
       throw "The file $($file.Name) is not valid, it must end with a line feed (empty line)"
