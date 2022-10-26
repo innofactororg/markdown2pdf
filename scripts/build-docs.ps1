@@ -34,8 +34,11 @@ param (
 )
 $currentPath = Get-Item -Path . | Select-Object -ExpandProperty FullName;
 # We need to get information from git log and we need to run this from root folder
-$mergeLogs = @(& git --no-pager log --date-order --date=format:'%B %e, %Y' --merges --first-parent --pretty=format:'%an|%ad|%D|%s' -- docs);
-$authors = @(& git --no-pager log --pretty=format:"%an" -- docs | Select-Object -Unique);
+#$mergeLogs = @(& git --no-pager log --date-order --date=format:'%B %e, %Y' --merges --first-parent --pretty=format:'%an|%ad|%D|%s' -- docs);
+$mergeLogs = @(& git --no-pager log --date-order --date=format:'%B %e, %Y' --first-parent --pretty=format:'%an|%ad|%D|%s' -- ../docs );
+
+#$authors = @(& git --no-pager log --pretty=format:"%an" -- docs | Select-Object -Unique);
+$authors = @(& git --no-pager log --pretty=format:"%an" -- ../docs | Select-Object -Unique);
 
 Push-Location;
 Set-Location -Path $PSScriptRoot;
