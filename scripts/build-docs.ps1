@@ -91,7 +91,8 @@ $currentDate = (Get-Date).ToString('MMMM d, yyyy', $culture);
 if ($mergeLogs.Count -eq 0 -and $authors.Count -ge 1) {
   $mergeLogs = @("$($authors[0])|$currentDate|tag: rel/repo/1.0.0|Initial draft")
 } elseif ($mergeLogs.Count -eq 0) {
-  $mergeLogs = @("Innofactor|$currentDate|tag: rel/repo/1.0.0|Initial draft")
+  # $mergeLogs = @("Innofactor|$currentDate|tag: rel/repo/1.0.0|Initial draft")
+  $mergeLogs = @("Aidan Finn|$currentDate|tag: rel/repo/1.0.0|Low Level Design")
 };
 $versionHistory = @(
   foreach ($mergeLog in $mergeLogs) {
