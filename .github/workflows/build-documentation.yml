@@ -49,13 +49,6 @@ jobs:
 #      output1: ${{ steps.step1.outputs.firstword }}
 #      output2: ${{ steps.step2.outputs.secondword }}
     steps:
-      - id: step0
-        run: echo "${GITHUB_ACTION_REPOSITORY}"
-      - id: step3
-        run: echo "${GITHUB_ACTION_PATH}"
-      - id: step4
-        run: echo "${GITHUB_REF##*/}"
-
 #      - id: step1
 #        run: echo "::set-output name=firstword::hello"
 #      - id: step2
@@ -224,22 +217,22 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Download the build script
-        run: curl -o ${{ inputs.DocsRootFolder }}/build-docs.ps1 https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/main/scripts/build-docs.ps1
+        run: curl -o ${{ inputs.DocsRootFolder }}/build-docs.ps1 https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/hotfix/footnotes/scripts/build-docs.ps1
 
       - name: Create Template area
         run: mkdir ${{ inputs.DocsRootFolder }}/templates
 
       - name: Download the Cover Image
-        run: curl -o ${{ inputs.DocsRootFolder }}/templates/cover.png https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/main/templates/cover.png
+        run: curl -o ${{ inputs.DocsRootFolder }}/templates/cover.png https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/hotfix/footnotes/templates/cover.png
 
       - name: Download the Logo
-        run: curl -o ${{ inputs.DocsRootFolder }}/templates/logo.png https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/main/templates/logo.png
+        run: curl -o ${{ inputs.DocsRootFolder }}/templates/logo.png https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/hotfix/footnotes/templates/logo.png
 
       - name: Download the LaTeX Template
-        run: curl -o ${{ inputs.DocsRootFolder }}/${{ inputs.Template }} https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/main/templates/${{ inputs.Template }}
+        run: curl -o ${{ inputs.DocsRootFolder }}/${{ inputs.Template }} https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/hotfix/footnotes/templates/${{ inputs.Template }}
 
       - name: Download the Pandoc Meta Data file
-        run: curl -o ${{ inputs.DocsRootFolder }}/${{ inputs.MetadataFile }} https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/main/${{ inputs.MetadataFile }}
+        run: curl -o ${{ inputs.DocsRootFolder }}/${{ inputs.MetadataFile }} https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/hotfix/footnotes/${{ inputs.MetadataFile }}
 
       - name: Update the Document Title
         run: yq eval -i '.title = "${{ inputs.Title }}"' ${{ inputs.DocsRootFolder }}/${{ inputs.MetadataFile }}
