@@ -136,6 +136,7 @@ if ($OutFile -notmatch '\.md$') {
   $markdowncontent | & pandoc `
     --standalone `
     --listings `
+    --chapters `
     --pdf-engine=xelatex `
     --metadata-file="$MetadataFile" `
     --metadata-file="$metadataExtraFile" `
