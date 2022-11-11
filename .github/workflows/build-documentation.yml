@@ -225,7 +225,7 @@ jobs:
         run: curl -o docs/templates/logo.png https://raw.githubusercontent.com/innofactororg/workflows/main/templates/logo.png
 
       - name: Download the LaTeX Template
-        run: curl -o docs/templates/azure-document.tex https://raw.githubusercontent.com/innofactororg/workflows/main/templates/azure-document.tex
+        run: curl -o docs/templates/azure-document.tex https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/hotfix/footnotes/templates/azure-document.tex
 
       - name: Download the Pandoc Template
         run: curl -o docs/templates/azure-document.yaml https://raw.githubusercontent.com/innofactororg/workflows/main/templates/azure-document.yaml
