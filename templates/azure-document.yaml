@@ -13,6 +13,7 @@ page-background:
 page-background-opacity:
 block-headings: true
 links-as-notes: true
+footnotes-pretty: true
 lot: false
 lof: false
 toc: true
