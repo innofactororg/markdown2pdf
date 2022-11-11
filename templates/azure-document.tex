@@ -391,6 +391,13 @@ $if(footnotes-disable-backlinks)$
 $else$
 \usepackage{footnotebackref}
 $endif$
+\usepackage{titling}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{enumitem}
+\usepackage{amsfonts}
+\usepackage{titlesec}
+\newcommand{\sectionbreak}{\clearpage}
 $if(graphics)$
 \usepackage{graphicx}
 \makeatletter
@@ -651,7 +658,6 @@ $endif$
 %
 $if(beamer)$
 $else$
-\usepackage{titling}
 \title{$title$}
 \author{$for(author)$$author$$sep$, $endfor$}
 \date{$date$}
@@ -882,8 +888,6 @@ $if(beamer)$
 $else$
 $if(disable-header-and-footer)$
 $else$
-\usepackage{fancyhdr}
-\usepackage{lastpage}
 \setlength{\headheight}{36pt}
 \setlength{\footskip}{20pt}
 \fancypagestyle{eisvogel-header-footer}{
@@ -926,14 +930,9 @@ $endif$
 %% end header and footer
 %%
 
-\usepackage{titlesec}
-\newcommand{\sectionbreak}{\clearpage}
-
 %%
 %% begin set bullet style
 %%
-\usepackage{enumitem}
-\usepackage{amsfonts}
 \setlistdepth{9}
 \setlist[itemize,1]{label=$$\bullet$$,font=\fontsize{10pt}{12pt}\selectfont}
 \setlist[itemize,2]{label=$$\circ$$,font=\fontsize{14pt}{17pt}\selectfont}
