@@ -145,7 +145,7 @@ jobs:
             subfig
             textcase
             thumbpdf
-            titlesec
+            sectsty
             translator
             typehtml
             ucharcat
