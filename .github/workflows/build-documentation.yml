@@ -3,7 +3,6 @@ name: 🧳 Build Documentation
 
 on:
   workflow_call:
-    # Map the workflow outputs to job outputs
     inputs:
       OrderFile:
         required: true
@@ -27,13 +26,17 @@ on:
       OutFile:
         required: true
         type: string
-    outputs:
-      firstword:
-        description: "The first output string"
-        value: ${{ jobs.example_job.outputs.output1 }}
-      secondword:
-        description: "The second output string"
-        value: ${{ jobs.example_job.outputs.output2 }}
+      DocsRootFolder:
+        required: false
+        type: string
+        default: docs
+#    outputs:
+#      firstword:
+#        description: "The first output string"
+#        value: ${{ jobs.example_job.outputs.output1 }}
+#      secondword:
+#        description: "The second output string"
+#        value: ${{ jobs.example_job.outputs.output2 }}
 
 jobs:
   example_job:
@@ -41,19 +44,17 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ github.token }}
-    # Map the job outputs to step outputs
-    outputs:
-      output1: ${{ steps.step1.outputs.firstword }}
-      output2: ${{ steps.step2.outputs.secondword }}
+#    outputs:
+#      output1: ${{ steps.step1.outputs.firstword }}
+#      output2: ${{ steps.step2.outputs.secondword }}
     steps:
-      - id: step1
-        run: echo "::set-output name=firstword::hello"
-      - id: step2
-        run: echo "::set-output name=secondword::world"
-
+ #     - id: step1
+ #       run: echo "::set-output name=firstword::hello"
+ #     - id: step2
+ #       run: echo "::set-output name=secondword::world"
       - name: Setup pandoc
         env:
-          PANDOC_VERSION: "2.18"
+          PANDOC_VERSION: "2.19.2"
         run: |
           wget -qO- "https://github.com/jgm/pandoc/releases/download/${PANDOC_VERSION}/pandoc-${PANDOC_VERSION}-linux-amd64.tar.gz" | sudo tar xzf - --strip-components 1 -C "/usr/local/"
 
@@ -258,13 +259,13 @@ jobs:
       #     limit-access-to-actor: true
 
       # Expanded Script Sample
-      # docs/build-docs.ps1 -OrderFile training/training.order -MetadataFile templates/azure-document.yaml -Template templates/azure-document.tex -OutFile training.pdf
+      # docs/build-docs.ps1 -OrderFile training/training.order -MetadataFile templates/azure-document.yaml -Template templates/azure-document.tex -OutFile training.pdf -DocsRootFolder docs
 
       - name: Build PDF
         shell: pwsh
         run: |
           $Global:ProgressPreference = 'SilentlyContinue';
-          & docs/build-docs.ps1 -OrderFile ${{ inputs.OrderFile }} -MetadataFile ${{ inputs.MetadataFile }} -Template ${{ inputs.Template }} -OutFile ${{ inputs.OutFile }}
+          & docs/build-docs.ps1 -OrderFile ${{ inputs.OrderFile }} -MetadataFile ${{ inputs.MetadataFile }} -Template ${{ inputs.Template }} -OutFile ${{ inputs.OutFile }} -DocsRootFolder ${{ inputs.DocsRootFolder }}
 
       - name: Publish PDF
         uses: actions/upload-artifact@v2
