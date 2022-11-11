@@ -49,6 +49,8 @@ jobs:
 #      output1: ${{ steps.step1.outputs.firstword }}
 #      output2: ${{ steps.step2.outputs.secondword }}
     steps:
+      - id: step0
+        run: echo "${{ github.action.repository }}"
 #      - id: step1
 #        run: echo "::set-output name=firstword::hello"
 #      - id: step2
@@ -56,7 +58,7 @@ jobs:
 
       - name: Setup pandoc
         env:
-          PANDOC_VERSION: "2.18"
+          PANDOC_VERSION: "2.19.2"
         run: |
           wget -qO- "https://github.com/jgm/pandoc/releases/download/${PANDOC_VERSION}/pandoc-${PANDOC_VERSION}-linux-amd64.tar.gz" | sudo tar xzf - --strip-components 1 -C "/usr/local/"
 
@@ -217,37 +219,37 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Download the build script
-        run: curl -o docs/build-docs.ps1 https://raw.githubusercontent.com/innofactororg/workflows/main/scripts/build-docs.ps1
+        run: curl -o ${{ inputs.DocsRootFolder }}/build-docs.ps1 https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/main/scripts/build-docs.ps1
 
       - name: Create Template area
-        run: mkdir docs/templates
+        run: mkdir ${{ inputs.DocsRootFolder }}/templates
 
       - name: Download the Cover Image
-        run: curl -o docs/templates/cover.png https://raw.githubusercontent.com/innofactororg/workflows/main/templates/cover.png
+        run: curl -o ${{ inputs.DocsRootFolder }}/templates/cover.png https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/main/templates/cover.png
 
       - name: Download the Logo
-        run: curl -o docs/templates/logo.png https://raw.githubusercontent.com/innofactororg/workflows/main/templates/logo.png
+        run: curl -o ${{ inputs.DocsRootFolder }}/templates/logo.png https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/main/templates/logo.png
 
       - name: Download the LaTeX Template
-        run: curl -o docs/templates/azure-document.tex https://raw.githubusercontent.com/innofactororg/workflows/main/templates/azure-document.tex
+        run: curl -o ${{ inputs.DocsRootFolder }}/${{ inputs.Template }} https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/main/templates/${{ inputs.Template }}
 
-      - name: Download the Pandoc Template
-        run: curl -o docs/templates/azure-document.yaml https://raw.githubusercontent.com/innofactororg/workflows/main/templates/azure-document.yaml
+      - name: Download the Pandoc Meta Data file
+        run: curl -o ${{ inputs.DocsRootFolder }}/${{ inputs.MetadataFile }} https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/main/${{ inputs.MetadataFile }}
 
       - name: Update the Document Title
-        run: yq eval -i '.title = "${{ inputs.Title }}"' docs/templates/azure-document.yaml
+        run: yq eval -i '.title = "${{ inputs.Title }}"' ${{ inputs.DocsRootFolder }}/${{ inputs.MetadataFile }}
 
       - name: Update the Document Subtitle
-        run: yq eval -i '.subtitle = "${{ inputs.Subtitle }}"' docs/templates/azure-document.yaml
+        run: yq eval -i '.subtitle = "${{ inputs.Subtitle }}"' ${{ inputs.DocsRootFolder }}/${{ inputs.MetadataFile }}
 
       - name: Update the path to titlepage-top-cover-image
-        run: yq eval -i '.titlepage-top-cover-image = "../templates/cover.png"' docs/templates/azure-document.yaml
+        run: yq eval -i '.titlepage-top-cover-image = "../templates/cover.png"' ${{ inputs.DocsRootFolder }}/${{ inputs.MetadataFile }}
 
       - name: Update the path to logo
-        run: yq eval -i '.logo = "../templates/logo.png"' docs/templates/azure-document.yaml
+        run: yq eval -i '.logo = "../templates/logo.png"' ${{ inputs.DocsRootFolder }}/${{ inputs.MetadataFile }}
 
       - name: Give script permissions
-        run: chmod +x docs/build-docs.ps1
+        run: chmod +x ${{ inputs.DocsRootFolder }}/build-docs.ps1
 
       # - name: Setup upterm session
       #   uses: lhotari/action-upterm@v1
@@ -267,7 +269,7 @@ jobs:
         shell: pwsh
         run: |
           $Global:ProgressPreference = 'SilentlyContinue';
-          & docs/build-docs.ps1 -OrderFile ${{ inputs.OrderFile }} -MetadataFile ${{ inputs.MetadataFile }} -Template ${{ inputs.Template }} -OutFile ${{ inputs.OutFile }} -DocsRootFolder ${{ inputs.DocsRootFolder }}
+          & ${{ inputs.DocsRootFolder }}/build-docs.ps1 -OrderFile ${{ inputs.OrderFile }} -MetadataFile ${{ inputs.MetadataFile }} -Template ${{ inputs.Template }} -OutFile ${{ inputs.OutFile }} -DocsRootFolder ${{ inputs.DocsRootFolder }}
 
       - name: Publish PDF
         uses: actions/upload-artifact@v2
