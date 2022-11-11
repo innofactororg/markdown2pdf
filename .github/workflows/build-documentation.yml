@@ -215,22 +215,22 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Download the build script
-        run: curl -f -o ${{ inputs.DocsRootFolder }}/build-docs.ps1 https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/hotfix/footnotes/scripts/build-docs.ps1
+        run: curl -f -o ${{ inputs.DocsRootFolder }}/build-docs.ps1 https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/main/scripts/build-docs.ps1
 
       - name: Create Template area
         run: mkdir ${{ inputs.DocsRootFolder }}/templates
 
       - name: Download the Cover Image
-        run: curl -f -o ${{ inputs.DocsRootFolder }}/templates/cover.png https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/hotfix/footnotes/templates/cover.png
+        run: curl -f -o ${{ inputs.DocsRootFolder }}/templates/cover.png https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/main/templates/cover.png
 
       - name: Download the Logo
-        run: curl -f -o ${{ inputs.DocsRootFolder }}/templates/logo.png https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/hotfix/footnotes/templates/logo.png
+        run: curl -f -o ${{ inputs.DocsRootFolder }}/templates/logo.png https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/main/templates/logo.png
 
       - name: Download the LaTeX Template
-        run: curl -f -o ${{ inputs.DocsRootFolder }}/${{ inputs.Template }} https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/hotfix/footnotes/${{ inputs.Template }}
+        run: curl -f -o ${{ inputs.DocsRootFolder }}/${{ inputs.Template }} https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/main/${{ inputs.Template }}
 
       - name: Download the Pandoc Meta Data file
-        run: curl -f -o ${{ inputs.DocsRootFolder }}/${{ inputs.MetadataFile }} https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/hotfix/footnotes/${{ inputs.MetadataFile }}
+        run: curl -f -o ${{ inputs.DocsRootFolder }}/${{ inputs.MetadataFile }} https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/main/${{ inputs.MetadataFile }}
 
       - name: Update the Document Title
         run: yq eval -i '.title = "${{ inputs.Title }}"' ${{ inputs.DocsRootFolder }}/${{ inputs.MetadataFile }}
