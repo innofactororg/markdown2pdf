@@ -114,7 +114,6 @@ jobs:
             filehook
             float
             fontspec
-            footnotehyper
             fp
             index
             jknapltx
