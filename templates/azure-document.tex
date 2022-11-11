@@ -93,8 +93,6 @@ $endif$
 $for(beameroption)$
 \setbeameroption{$beameroption$}
 $endfor$
-\usepackage{titlesec}
-\newcommand{\sectionbreak}{\clearpage}
 % Prevent slide breaks in the middle of a paragraph
 \widowpenalties 1 10000
 \raggedbottom
@@ -1121,6 +1119,8 @@ $endif$
 $if(has-frontmatter)$
 \mainmatter
 $endif$
+\usepackage{titlesec}
+\newcommand{\sectionbreak}{\clearpage}
 $body$
 
 $if(has-frontmatter)$
