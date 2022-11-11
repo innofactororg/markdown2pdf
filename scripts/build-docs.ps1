@@ -30,17 +30,21 @@ param (
   $Template,
   [Parameter(Mandatory = $true)]
   [string]
-  $OutFile
+  $OutFile,
+  [Parameter(Mandatory = $false)]
+  [string]
+  $DocsRootFolder = 'docs'
 )
-$currentPath = Get-Item -Path . | Select-Object -ExpandProperty FullName;
+# Current path is typically the root of the repository
+$currentPath = Get-Item -Path .;
+$docsFullPath = Join-Path -Path $currentPath.FullName -ChildPath $DocsRootFolder;
 # We need to get information from git log and we need to run this from root folder
-#$mergeLogs = @(& git --no-pager log --date-order --date=format:'%B %e, %Y' --merges --first-parent --pretty=format:'%an|%ad|%D|%s' -- docs);
-$mergeLogs = @(& git --no-pager log --date-order --date=format:'%B %e, %Y' --first-parent --pretty=format:'%an|%ad|%D|%s' -- ../docs );
-
-#$authors = @(& git --no-pager log --pretty=format:"%an" -- docs | Select-Object -Unique);
-$authors = @(& git --no-pager log --pretty=format:"%an" -- ../docs | Select-Object -Unique);
+$mergeLogs = @(& git --no-pager log --date-order --date=format:'%B %e, %Y' --first-parent --pretty=format:'%an|%ad|%D|%s' -- $docsFullPath);
+$authors = @(& git --no-pager log --pretty=format:"%an" -- $docsFullPath | Select-Object -Unique);
 
 Push-Location;
+# This script is copied to the folder where the documentation exist, typically the docs folder in the root of the repository
+# We set location to the docs folder and work from there
 Set-Location -Path $PSScriptRoot;
 if (-not(Test-Path -Path $OrderFile -PathType Leaf)) {
   throw "Unable to find $OrderFile"
@@ -82,7 +86,7 @@ $MetadataFile = $MetadataFileItem | Select-Object -ExpandProperty FullName;
 $metadataExtraFile = Join-Path -Path $($MetadataFileItem | Select-Object -ExpandProperty DirectoryName) -ChildPath 'latest-release-info.json';
 $Template = Get-Item -Path $Template | Select-Object -ExpandProperty FullName;
 if (-not($OutFile -match '\\' -or $OutFile -match '/')) {
-  $OutFile = Join-Path -Path $currentPath -ChildPath $OutFile
+  $OutFile = Join-Path -Path $currentPath.FullName -ChildPath $OutFile
 };
 Write-Host -Object "Creating $OutFile";
 Set-Location -Path $docPath;
