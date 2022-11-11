@@ -50,7 +50,12 @@ jobs:
 #      output2: ${{ steps.step2.outputs.secondword }}
     steps:
       - id: step0
-        run: echo "${{ github.action.repository }}"
+        run: echo "${GITHUB_ACTION_REPOSITORY}"
+      - id: step3
+        run: echo "${GITHUB_ACTION_PATH}"
+      - id: step4
+        run: echo "${GITHUB_REF##*/}"
+
 #      - id: step1
 #        run: echo "::set-output name=firstword::hello"
 #      - id: step2
