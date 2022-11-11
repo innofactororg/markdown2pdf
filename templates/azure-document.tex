@@ -926,6 +926,9 @@ $endif$
 %% end header and footer
 %%
 
+\usepackage{titlesec}
+\newcommand{\sectionbreak}{\clearpage}
+
 %%
 %% begin set bullet style
 %%
@@ -1119,8 +1122,6 @@ $endif$
 $if(has-frontmatter)$
 \mainmatter
 $endif$
-\usepackage{titlesec}
-\newcommand{\sectionbreak}{\clearpage}
 $body$
 
 $if(has-frontmatter)$
