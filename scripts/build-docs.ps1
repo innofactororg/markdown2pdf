@@ -42,6 +42,12 @@ $docsFullPath = Join-Path -Path $currentPath.FullName -ChildPath $DocsRootFolder
 $mergeLogs = @(& git --no-pager log --date-order --date=format:'%B %e, %Y' --first-parent --pretty=format:'%an|%ad|%D|%s' -- $docsFullPath);
 $authors = @(& git --no-pager log --pretty=format:"%an" -- $docsFullPath | Select-Object -Unique);
 
+Write-Host -Object $mergeLogs
+Write-Host -Object $authors
+
+$mergeLogs = @()
+$authors = @()
+
 Push-Location;
 # This script is copied to the folder where the documentation exist, typically the docs folder in the root of the repository
 # We set location to the docs folder and work from there
