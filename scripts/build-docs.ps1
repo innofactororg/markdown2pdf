@@ -2,13 +2,14 @@
 .SYNOPSIS
   Build PDF document from markdown files based on order file.
 .NOTES
-  To use this script on windows, install the following:
-  - https://miktex.org/download
+  To use this script on windows, install the following (to update with winget replace install with upgrade):
+  - winget install --id JohnMacFarlane.Pandoc
+  - winget install --id MiKTeX.MiKTeX
     - Select Always for the option Install missing packages on the fly
-    - After install, open MiKTex Console and Check for updates.
-      If MiKTex was installed for all users you must
-      start MiKTex Console with run as administrator
-  - https://www.python.org/downloads/windows/
+    - After install, open MiKTeX Console and Check for updates.
+      If MiKTeX was installed for all users you must
+      start MiKTeX Console with run as administrator
+  - winget install --id Python.Python.3.11
   - python -m pip install --upgrade pip
   - pip install pandoc-latex-environment
 
@@ -87,6 +88,7 @@ if (-not($OutFile -match '\\' -or $OutFile -match '/')) {
   $OutFile = Join-Path -Path $currentPath.FullName -ChildPath $OutFile
 };
 Write-Host -Object "Creating $OutFile";
+# Set location path to a specific folder in the docs folder, e.g. docs/detaileddesign
 Set-Location -Path $docPath;
 $culture = New-Object System.Globalization.CultureInfo('en-US');
 $currentDate = (Get-Date).ToString('MMMM d, yyyy', $culture);
