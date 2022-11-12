@@ -66,16 +66,34 @@ jobs:
         uses: teatimeguest/setup-texlive-action@v2
         with:
           packages: >-
+            adjustbox
             ae
             amscls
             amsmath
+            anysize
+            awesomebox
             babel
             babel-english
             babel-german
             babelbib
+            background
+            beamer
+            bidi
             bookmark
+            booktabs
+            breqn
+            caption
             carlisle
+            cite
+            cmap
+            collectbox
             colortbl
+            crop
+            csquotes
+            ctable
+            enumitem
+            environ
+            etoolbox
             fancyhdr
             fix2col
             geometry
@@ -96,15 +114,6 @@ jobs:
             pspicture
             tools
             url
-            anysize
-            beamer
-            booktabs
-            breqn
-            caption
-            cite
-            cmap
-            crop
-            ctable
             eso-pic
             euenc
             euler
@@ -159,11 +168,6 @@ jobs:
             xkeyval
             xltxtra
             xunicode
-            adjustbox
-            background
-            bidi
-            collectbox
-            csquotes
             everypage
             filehook
             footmisc
@@ -187,15 +191,11 @@ jobs:
             xecjk
             xurl
             zref
-            awesomebox
             fontawesome5
             tcolorbox
             pgf
-            etoolbox
-            environ
             trimspaces
             lastpage
-            enumitem
             
       - name: Initialization for tlmgr
         run: |
