@@ -12,6 +12,8 @@
   - winget install --id Python.Python.3.11
   - python -m pip install --upgrade pip
   - pip install pandoc-latex-environment
+  - winget install --id OpenJS.NodeJS
+  - npm install @mermaid-js/mermaid-cli
   - pip install pandoc-mermaid-filter
 
   Using modified latex template from https://github.com/Wandmalfarbe/pandoc-latex-template
