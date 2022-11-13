@@ -65,9 +65,9 @@ jobs:
 #      output2: ${{ steps.step2.outputs.secondword }}
     steps:
  #     - id: step1
- #       run: echo "{firstword}={hello}" >> $GITHUB_OUTPUT
+ #       run: echo "firstword=hello" >> $GITHUB_OUTPUT
  #     - id: step2
- #       run: echo "{secondword}={world}" >> $GITHUB_OUTPUT
+ #       run: echo "secondword=world" >> $GITHUB_OUTPUT
       - name: Setup pandoc
         env:
           PANDOC_VERSION: "2.19.2"
@@ -231,8 +231,8 @@ jobs:
       - name: Install mermaid cli
         run: |
           npm install @mermaid-js/mermaid-cli
-          export PATH=$PATH:$(PWD)/node_modules/.bin/mmdc
-          export MERMAID_BIN=$(PWD)/node_modules/.bin/mmdc
+          echo "$HOME/node_modules/.bin/mmdc" >> $GITHUB_PATH
+          echo "MERMAID_BIN=$HOME/node_modules/.bin/mmdc" >> $GITHUB_ENV
           echo "Mermaid cli installed to:"
           echo $MERMAID_BIN
 
