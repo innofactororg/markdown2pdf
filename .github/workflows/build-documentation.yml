@@ -231,6 +231,8 @@ jobs:
       - name: Install mermaid cli
         run: |
           npm install @mermaid-js/mermaid-cli
+          export PATH=$PATH:$(PWD)/node_modules/.bin/mmdc
+          export MERMAID_BIN=$(PWD)/node_modules/.bin/mmdc
 
       - name: Install python filters
         run: |
@@ -295,7 +297,6 @@ jobs:
         run: |
           $Global:ProgressPreference = 'SilentlyContinue';
           $forceDefault = '${{ inputs.ForceDefault }}' -eq 'true';
-          $env:MERMAID_BIN = './node_modules/.bin/mmdc';
           & ${{ inputs.DocsRootFolder }}/build-docs.ps1 -OrderFile '${{ inputs.OrderFile }}' -MetadataFile '${{ inputs.MetadataFile }}' -Template '${{ inputs.Template }}' -OutFile '${{ inputs.OutFile }}' -DocsRootFolder '${{ inputs.DocsRootFolder }}' -DefaultAuthor '${{ inputs.DefaultAuthor }}' -DefaultDescription '${{ inputs.DefaultDescription }}' -ForceDefault:$forceDefault
 
       - name: Publish PDF
