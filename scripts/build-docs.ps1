@@ -128,6 +128,7 @@ if ($mergeLogs.Count -eq 0 -and $authors.Count -ge 1) {
 } elseif ($mergeLogs.Count -eq 0) {
   $mergeLogs = @("$DefaultAuthor|$currentDate|tag: rel/repo/1.0.0|$DefaultDescription")
 };
+$i = 0;
 $versionHistory = @(
   foreach ($mergeLog in $mergeLogs) {
     $items = @($mergeLog.Split('|'));
@@ -136,7 +137,7 @@ $versionHistory = @(
       if ($refNamesTag.Count -eq 2 -and $refNamesTag[1] -match 'rel/') {
         @(@($refNamesTag[1] -split ',')[0] -split '/')[-1]
       } else {
-        '1.0.0'
+        "1.0.$i"
       }
     );
     if ($items.Count -ge 4) {
@@ -145,7 +146,8 @@ $versionHistory = @(
         "date"        = $items[1].Replace('  ', ' ');
         "author"      = $items[0];
         "description" = $items[3]
-      }
+      };
+      $i++;
     }
   }
 );
