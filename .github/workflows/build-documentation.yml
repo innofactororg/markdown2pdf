@@ -231,7 +231,7 @@ jobs:
       - name: Install mermaid cli
         run: |
           npm install @mermaid-js/mermaid-cli
-          ./node_modules/.bin/mmdc -h
+          alias mermaid='mmdc'
 
       - name: Install python filters
         run: |
