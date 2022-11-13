@@ -149,7 +149,8 @@ if ($OutFile -notmatch '\.md$') {
     Write-Warning -Message "Unable to create $OutFile"
   } else {
     $file = Get-Item -Path $OutFile;
-    Write-Host -Object "Done creating $($file.FullName) at $($file.CreationTime), size is $([math]::Ceiling($file.Length / 1kb)) kb"
+    Write-Host -Object "Done creating $($file.FullName) at $($file.CreationTime), size is $([math]::Ceiling($file.Length / 1kb)) kb. Version metadata:";
+    Write-Host -Object $metadataContent
   };
   Pop-Location
 } else {
