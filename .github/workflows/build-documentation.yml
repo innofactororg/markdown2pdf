@@ -228,16 +228,6 @@ jobs:
         with:
           node-version: 16
 
-      - name: Install mermaid cli
-        shell: pwsh
-        run: |
-          & npm install @mermaid-js/mermaid-cli
-          $mmdcPath = Get-Item -Path ./node_modules/.bin/mmdc;
-          Write-Host -Object "Mermaid cli is installed to:"
-          Write-Host -Object "  $($mmdcPath.FullName)"
-          echo "$($mmdcPath.DirectoryName)" >> $GITHUB_PATH
-          echo "MERMAID_BIN=$($mmdcPath.FullName)" >> $GITHUB_ENV
-
       - name: Install python filters
         run: |
           python -m pip install --upgrade pip
@@ -301,7 +291,12 @@ jobs:
         run: |
           $Global:ProgressPreference = 'SilentlyContinue';
           $forceDefault = '${{ inputs.ForceDefault }}' -eq 'true';
-          Get-Item -Path "${{ github.workspace }}/node_modules/.bin/mmdc";
+          & npm install @mermaid-js/mermaid-cli
+          $mmdcPath = Get-Item -Path ./node_modules/.bin/mmdc;
+          Write-Host -Object "Mermaid cli is installed to:"
+          Write-Host -Object "  $($mmdcPath.FullName)"
+          echo "$($mmdcPath.DirectoryName)" >> $GITHUB_PATH
+          echo "MERMAID_BIN=$($mmdcPath.FullName)" >> $GITHUB_ENV
           & ${{ inputs.DocsRootFolder }}/build-docs.ps1 -OrderFile '${{ inputs.OrderFile }}' -MetadataFile '${{ inputs.MetadataFile }}' -Template '${{ inputs.Template }}' -OutFile '${{ inputs.OutFile }}' -DocsRootFolder '${{ inputs.DocsRootFolder }}' -DefaultAuthor '${{ inputs.DefaultAuthor }}' -DefaultDescription '${{ inputs.DefaultDescription }}' -ForceDefault:$forceDefault
 
       - name: Publish PDF
