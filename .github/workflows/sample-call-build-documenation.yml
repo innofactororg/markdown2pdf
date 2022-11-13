@@ -28,3 +28,6 @@ jobs:
       Subtitle: Document
       DocsRootFolder: docs
       BuildBranch: main
+      DefaultAuthor: Innofactor
+      DefaultDescription: Initial draft
+      ForceDefault: false

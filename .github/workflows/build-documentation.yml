@@ -34,6 +34,18 @@ on:
         required: false
         type: string
         default: main
+      DefaultAuthor:
+        required: false
+        type: string
+        default: Innofactor
+      DefaultDescription:
+        required: false
+        type: string
+        default: Initial draft
+      ForceDefault:
+        required: false
+        type: bool
+        default: false
 #    outputs:
 #      firstword:
 #        description: "The first output string"
@@ -218,6 +230,8 @@ jobs:
 
       - name: Clone repository for building
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Download the build script
         run: curl -f -o ${{ inputs.DocsRootFolder }}/build-docs.ps1 https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/${{ inputs.BuildBranch }}/scripts/build-docs.ps1
@@ -270,7 +284,7 @@ jobs:
         shell: pwsh
         run: |
           $Global:ProgressPreference = 'SilentlyContinue';
-          & ${{ inputs.DocsRootFolder }}/build-docs.ps1 -OrderFile ${{ inputs.OrderFile }} -MetadataFile ${{ inputs.MetadataFile }} -Template ${{ inputs.Template }} -OutFile ${{ inputs.OutFile }} -DocsRootFolder ${{ inputs.DocsRootFolder }}
+          & ${{ inputs.DocsRootFolder }}/build-docs.ps1 -OrderFile ${{ inputs.OrderFile }} -MetadataFile ${{ inputs.MetadataFile }} -Template ${{ inputs.Template }} -OutFile ${{ inputs.OutFile }} -DocsRootFolder ${{ inputs.DocsRootFolder }} -DefaultAuthor ${{ inputs.DefaultAuthor }} -DefaultDescription ${{ inputs.DefaultDescription }} -ForceDefault ${{ inputs.ForceDefault }}
 
       - name: Publish PDF
         uses: actions/upload-artifact@v3

@@ -34,25 +34,59 @@ param (
   $OutFile,
   [Parameter(Mandatory = $false)]
   [string]
-  $DocsRootFolder = 'docs'
+  $DocsRootFolder = 'docs',
+  [Parameter(Mandatory = $false)]
+  [string]
+  $DefaultAuthor = 'Innofactor',
+  [Parameter(Mandatory = $false)]
+  [string]
+  $DefaultDescription = 'Initial draft',
+  [Parameter(Mandatory = $false)]
+  [switch]
+  $ForceDefault
 )
 $currentPath = Get-Item -Path .;
-$docsFullPath = Join-Path -Path $currentPath.FullName -ChildPath $DocsRootFolder;
+$docsRootPath = Join-Path -Path $currentPath.FullName -ChildPath $DocsRootFolder;
+$orderFilePath = $(
+  if (-not(Test-Path -Path $OrderFile -PathType Leaf)) {
+    Get-Item -Path $(Join-Path -Path $docsRootPath -ChildPath $OrderFile)
+  } else {
+    Get-Item -Path $OrderFile
+  }
+);
+$metadataFilePath = $(
+  if (-not(Test-Path -Path $MetadataFile -PathType Leaf)) {
+    Get-Item -Path $(Join-Path -Path $docsRootPath -ChildPath $MetadataFile)
+  } else {
+    Get-Item -Path $MetadataFile
+  }
+);
+$templateFilePath = $(
+  if (-not(Test-Path -Path $Template -PathType Leaf)) {
+    Get-Item -Path $(Join-Path -Path $docsRootPath -ChildPath $Template)
+  } else {
+    Get-Item -Path $Template
+  }
+);
 # We need to get information from git log and we need to run this from root folder
-$mergeLogs = @(& git --no-pager log --date-order --date=format:'%B %e, %Y' --first-parent --pretty=format:'%an|%ad|%D|%s' -- $docsFullPath);
-$authors = @(& git --no-pager log --pretty=format:"%an" -- $docsFullPath | Select-Object -Unique);
+$mergeLogs = @(
+  if (-not($ForceDefault)) {
+    & git --no-pager log --date-order --date=format:'%B %e, %Y' --first-parent --no-merges --pretty=format:'%an|%ad|%D|%s' -- $orderFilePath.DirectoryName
+  }
+);
+$authors = @(
+  if (-not($ForceDefault)) {
+    & git --no-pager log --pretty=format:"%an" -- $orderFilePath.DirectoryName | Select-Object -Unique
+  }
+);
 # This script is copied to the folder where the documentation exist, typically the docs folder in the root of the repository
 # We set location to the docs folder and work from there
 Push-Location;
 Set-Location -Path $PSScriptRoot;
-if (-not(Test-Path -Path $OrderFile -PathType Leaf)) {
-  throw "Unable to find $OrderFile"
-};
-$docPath = Get-Item -Path $OrderFile | Select-Object -ExpandProperty DirectoryName;
 # Get the markdown files in OrderFile
 $files = @(
-  Get-Content -Path $OrderFile | ForEach-Object {
-    Get-Item -Path (Join-Path -Path $docPath -ChildPath $_) -ErrorAction Stop
+  Get-Content -Path $orderFilePath.FullName | ForEach-Object {
+    Get-Item -Path (Join-Path -Path $orderFilePath.DirectoryName -ChildPath $_) -ErrorAction Stop
   }
 );
 $i = 0;
@@ -80,23 +114,19 @@ $markdowncontent = $(
     }
   }
 );
-$MetadataFileItem = Get-Item -Path $MetadataFile;
-$MetadataFile = $MetadataFileItem | Select-Object -ExpandProperty FullName;
-$metadataExtraFile = Join-Path -Path $($MetadataFileItem | Select-Object -ExpandProperty DirectoryName) -ChildPath 'latest-release-info.json';
-$Template = Get-Item -Path $Template | Select-Object -ExpandProperty FullName;
+$metadataExtraFile = Join-Path -Path $metadataFilePath.DirectoryName -ChildPath 'latest-release-info.json';
 if (-not($OutFile -match '\\' -or $OutFile -match '/')) {
   $OutFile = Join-Path -Path $currentPath.FullName -ChildPath $OutFile
 };
 Write-Host -Object "Creating $OutFile";
 # Set location path to a specific folder in the docs folder, e.g. docs/detaileddesign
-Set-Location -Path $docPath;
+Set-Location -Path $orderFilePath.DirectoryName;
 $culture = New-Object System.Globalization.CultureInfo('en-US');
 $currentDate = (Get-Date).ToString('MMMM d, yyyy', $culture);
 if ($mergeLogs.Count -eq 0 -and $authors.Count -ge 1) {
-  $mergeLogs = @("$($authors[0])|$currentDate|tag: rel/repo/1.0.0|Initial draft")
+  $mergeLogs = @("$($authors[0])|$currentDate|tag: rel/repo/1.0.0|$DefaultDescription")
 } elseif ($mergeLogs.Count -eq 0) {
-  # $mergeLogs = @("Innofactor|$currentDate|tag: rel/repo/1.0.0|Initial draft")
-  $mergeLogs = @("Aidan Finn|$currentDate|tag: rel/repo/1.0.0|Low Level Design")
+  $mergeLogs = @("$DefaultAuthor|$currentDate|tag: rel/repo/1.0.0|$DefaultDescription")
 };
 $versionHistory = @(
   foreach ($mergeLog in $mergeLogs) {
@@ -139,10 +169,10 @@ if ($OutFile -notmatch '\.md$') {
     --standalone `
     --listings `
     --pdf-engine=xelatex `
-    --metadata-file="$MetadataFile" `
+    --metadata-file="$($metadataFilePath.FullName)" `
     --metadata-file="$metadataExtraFile" `
     -f markdown+backtick_code_blocks+pipe_tables+auto_identifiers+yaml_metadata_block+table_captions+footnotes+smart+escaped_line_breaks `
-    --template="$Template" `
+    --template="$($templateFilePath.FullName)" `
     --filter pandoc-latex-environment `
     --output="$OutFile";
   if (-not(Test-Path -Path $OutFile -PathType Leaf)) {
