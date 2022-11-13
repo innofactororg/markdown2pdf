@@ -233,6 +233,8 @@ jobs:
           npm install @mermaid-js/mermaid-cli
           export PATH=$PATH:$(PWD)/node_modules/.bin/mmdc
           export MERMAID_BIN=$(PWD)/node_modules/.bin/mmdc
+          echo "Mermaid cli installed to:"
+          echo $MERMAID_BIN
 
       - name: Install python filters
         run: |
