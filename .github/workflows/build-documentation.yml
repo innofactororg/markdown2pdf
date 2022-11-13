@@ -231,13 +231,13 @@ jobs:
       - name: Install mermaid cli
         run: |
           npm install @mermaid-js/mermaid-cli
-          echo "$HOME/node_modules/.bin/mmdc" >> $GITHUB_PATH
-          echo "MERMAID_BIN=$GITHUB_WORKSPACE/node_modules/.bin/mmdc" >> $GITHUB_ENV
+          echo "$GITHUB_WORKSPACE/node_modules/.bin/mmdc" >> $GITHUB_PATH
+          echo "MERMAID_BIN=mmdc" >> $GITHUB_ENV
           echo "Mermaid cli installed to $GITHUB_WORKSPACE/node_modules/.bin/mmdc"
 
       - name: Check mermaid cli
         id: check_mermaid
-        uses: andstor/file-existence-action@v1
+        uses: andstor/file-existence-action@v2
         with:
           files: "${{ github.workspace }}/node_modules/.bin/mmdc"
 
