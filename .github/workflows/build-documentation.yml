@@ -232,9 +232,14 @@ jobs:
         run: |
           npm install @mermaid-js/mermaid-cli
           echo "$HOME/node_modules/.bin/mmdc" >> $GITHUB_PATH
-          echo "MERMAID_BIN=$HOME/node_modules/.bin/mmdc" >> $GITHUB_ENV
-          echo "Mermaid cli installed to:"
-          echo $MERMAID_BIN
+          echo "MERMAID_BIN=$GITHUB_WORKSPACE/node_modules/.bin/mmdc" >> $GITHUB_ENV
+          echo "Mermaid cli installed to $GITHUB_WORKSPACE/node_modules/.bin/mmdc"
+
+      - name: Check mermaid cli
+        id: check_mermaid
+        uses: andstor/file-existence-action@v1
+        with:
+          files: "${{ github.workspace }}/node_modules/.bin/mmdc"
 
       - name: Install python filters
         run: |
