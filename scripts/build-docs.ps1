@@ -170,6 +170,7 @@ $metadataContent = @{
 Set-Content -Path $metadataExtraFile -Value $metadataContent -Force -Encoding utf8;
 # We only want to use pandoc if the output file is not a markdown file
 if ($OutFile -notmatch '\.md$') {
+  #     --filter pandoc-mermaid `
   $markdowncontent | & pandoc `
     --standalone `
     --listings `
@@ -179,7 +180,6 @@ if ($OutFile -notmatch '\.md$') {
     -f markdown+backtick_code_blocks+pipe_tables+auto_identifiers+yaml_metadata_block+table_captions+footnotes+smart+escaped_line_breaks `
     --template="$($templateFilePath.FullName)" `
     --filter pandoc-latex-environment `
-    --filter pandoc-mermaid `
     --output="$OutFile";
   if (-not(Test-Path -Path $OutFile -PathType Leaf)) {
     Write-Warning -Message "Unable to create $OutFile"

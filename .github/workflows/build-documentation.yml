@@ -286,6 +286,10 @@ jobs:
       # Expanded Script Sample
       # docs/build-docs.ps1 -OrderFile training/training.order -MetadataFile templates/azure-document.yaml -Template templates/azure-document.tex -OutFile training.pdf -DocsRootFolder docs
 
+      # Mermaid support is currently stuck at this error message:
+      # Error running filter pandoc-mermaid:
+      # Error in $: Failed reading: not a valid json value at 'Generatingsinglemermaidchart'
+
       - name: Build PDF
         shell: pwsh
         run: |
