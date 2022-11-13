@@ -292,6 +292,7 @@ jobs:
           $Global:ProgressPreference = 'SilentlyContinue';
           $forceDefault = '${{ inputs.ForceDefault }}' -eq 'true';
           & npm install @mermaid-js/mermaid-cli;
+          $mmdcPath = Get-Item -Path ./node_modules/.bin/mmdc;
           $env:MERMAID_BIN = $mmdcPath.FullName;
           & ${{ inputs.DocsRootFolder }}/build-docs.ps1 -OrderFile '${{ inputs.OrderFile }}' -MetadataFile '${{ inputs.MetadataFile }}' -Template '${{ inputs.Template }}' -OutFile '${{ inputs.OutFile }}' -DocsRootFolder '${{ inputs.DocsRootFolder }}' -DefaultAuthor '${{ inputs.DefaultAuthor }}' -DefaultDescription '${{ inputs.DefaultDescription }}' -ForceDefault:$forceDefault
 
