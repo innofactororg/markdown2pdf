@@ -304,6 +304,7 @@ jobs:
         run: |
           $Global:ProgressPreference = 'SilentlyContinue';
           $forceDefault = '${{ inputs.ForceDefault }}' -eq 'true';
+          & mmdc -h;
           & ${{ inputs.DocsRootFolder }}/build-docs.ps1 -OrderFile '${{ inputs.OrderFile }}' -MetadataFile '${{ inputs.MetadataFile }}' -Template '${{ inputs.Template }}' -OutFile '${{ inputs.OutFile }}' -DocsRootFolder '${{ inputs.DocsRootFolder }}' -DefaultAuthor '${{ inputs.DefaultAuthor }}' -DefaultDescription '${{ inputs.DefaultDescription }}' -ForceDefault:$forceDefault
 
       - name: Publish PDF
