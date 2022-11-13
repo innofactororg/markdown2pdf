@@ -44,7 +44,7 @@ on:
         default: Initial draft
       ForceDefault:
         required: false
-        type: bool
+        type: boolean
         default: false
 #    outputs:
 #      firstword:
