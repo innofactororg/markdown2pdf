@@ -12,6 +12,7 @@
   - winget install --id Python.Python.3.11
   - python -m pip install --upgrade pip
   - pip install pandoc-latex-environment
+  - pip install pandoc-mermaid-filter
 
   Using modified latex template from https://github.com/Wandmalfarbe/pandoc-latex-template
 .EXAMPLE
@@ -176,6 +177,7 @@ if ($OutFile -notmatch '\.md$') {
     -f markdown+backtick_code_blocks+pipe_tables+auto_identifiers+yaml_metadata_block+table_captions+footnotes+smart+escaped_line_breaks `
     --template="$($templateFilePath.FullName)" `
     --filter pandoc-latex-environment `
+    --filter pandoc-mermaid `
     --output="$OutFile";
   if (-not(Test-Path -Path $OutFile -PathType Leaf)) {
     Write-Warning -Message "Unable to create $OutFile"

@@ -227,6 +227,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install pandoc-latex-environment
+          pip install pandoc-mermaid-filter
 
       - name: Clone repository for building
         uses: actions/checkout@v3
