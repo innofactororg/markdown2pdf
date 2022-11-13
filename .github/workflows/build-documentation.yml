@@ -284,7 +284,8 @@ jobs:
         shell: pwsh
         run: |
           $Global:ProgressPreference = 'SilentlyContinue';
-          & ${{ inputs.DocsRootFolder }}/build-docs.ps1 -OrderFile '${{ inputs.OrderFile }}' -MetadataFile '${{ inputs.MetadataFile }}' -Template '${{ inputs.Template }}' -OutFile '${{ inputs.OutFile }}' -DocsRootFolder '${{ inputs.DocsRootFolder }}' -DefaultAuthor '${{ inputs.DefaultAuthor }}' -DefaultDescription '${{ inputs.DefaultDescription }}' -ForceDefault ${{ inputs.ForceDefault }}
+          $forceDefault = '${{ inputs.ForceDefault }}' -eq 'true';
+          & ${{ inputs.DocsRootFolder }}/build-docs.ps1 -OrderFile '${{ inputs.OrderFile }}' -MetadataFile '${{ inputs.MetadataFile }}' -Template '${{ inputs.Template }}' -OutFile '${{ inputs.OutFile }}' -DocsRootFolder '${{ inputs.DocsRootFolder }}' -DefaultAuthor '${{ inputs.DefaultAuthor }}' -DefaultDescription '${{ inputs.DefaultDescription }}' -ForceDefault:$forceDefault
 
       - name: Publish PDF
         uses: actions/upload-artifact@v3
