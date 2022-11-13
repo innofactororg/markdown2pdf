@@ -231,7 +231,7 @@ jobs:
       - name: Install mermaid cli
         run: |
           npm install @mermaid-js/mermaid-cli
-          echo "$GITHUB_WORKSPACE/node_modules/.bin/mmdc" >> $GITHUB_PATH
+          echo "$GITHUB_WORKSPACE/node_modules/.bin" >> $GITHUB_PATH
           echo "MERMAID_BIN=mmdc" >> $GITHUB_ENV
           echo "Mermaid cli installed to $GITHUB_WORKSPACE/node_modules/.bin/mmdc"
 
@@ -304,7 +304,7 @@ jobs:
         run: |
           $Global:ProgressPreference = 'SilentlyContinue';
           $forceDefault = '${{ inputs.ForceDefault }}' -eq 'true';
-          & mmdc -h;
+          Get-Item -Path "${{ github.workspace }}/node_modules/.bin/mmdc";
           & ${{ inputs.DocsRootFolder }}/build-docs.ps1 -OrderFile '${{ inputs.OrderFile }}' -MetadataFile '${{ inputs.MetadataFile }}' -Template '${{ inputs.Template }}' -OutFile '${{ inputs.OutFile }}' -DocsRootFolder '${{ inputs.DocsRootFolder }}' -DefaultAuthor '${{ inputs.DefaultAuthor }}' -DefaultDescription '${{ inputs.DefaultDescription }}' -ForceDefault:$forceDefault
 
       - name: Publish PDF
