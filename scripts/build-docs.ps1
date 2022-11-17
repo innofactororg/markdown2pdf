@@ -12,9 +12,6 @@
   - winget install --id Python.Python.3.11
   - python -m pip install --upgrade pip
   - pip install pandoc-latex-environment
-  - winget install --id OpenJS.NodeJS
-  - npm install @mermaid-js/mermaid-cli
-  - pip install pandoc-mermaid-filter
 
   Using modified latex template from https://github.com/Wandmalfarbe/pandoc-latex-template
 .EXAMPLE
@@ -79,7 +76,7 @@ $mergeLogs = @(
 );
 $authors = @(
   if (-not($ForceDefault)) {
-    & git --no-pager log --pretty=format:"%an" -- $orderFilePath.DirectoryName | Select-Object -Unique
+    & git --no-pager log --first-parent --no-merges --pretty=format:"%an" -- $orderFilePath.DirectoryName | Select-Object -Unique
   }
 );
 # This script is copied to the folder where the documentation exist, typically the docs folder in the root of the repository
@@ -118,10 +115,6 @@ $markdowncontent = $(
   }
 );
 $metadataExtraFile = Join-Path -Path $metadataFilePath.DirectoryName -ChildPath 'latest-release-info.json';
-if (-not($OutFile -match '\\' -or $OutFile -match '/')) {
-  $OutFile = Join-Path -Path $currentPath.FullName -ChildPath $OutFile
-};
-Write-Host -Object "Creating $OutFile";
 # Set location path to a specific folder in the docs folder, e.g. docs/detaileddesign
 Set-Location -Path $orderFilePath.DirectoryName;
 $culture = New-Object System.Globalization.CultureInfo('en-US');
@@ -168,19 +161,36 @@ $metadataContent = @{
   "mainfont"        = $font
 } | ConvertTo-Json;
 Set-Content -Path $metadataExtraFile -Value $metadataContent -Force -Encoding utf8;
+if (-not($OutFile -match '\\' -or $OutFile -match '/')) {
+  $OutFile = Join-Path -Path $currentPath.FullName -ChildPath $OutFile
+};
+Write-Host -Object "Creating $OutFile";
 # We only want to use pandoc if the output file is not a markdown file
 if ($OutFile -notmatch '\.md$') {
-  #     --filter pandoc-mermaid `
-  $markdowncontent | & pandoc `
-    --standalone `
-    --listings `
-    --pdf-engine=xelatex `
-    --metadata-file="$($metadataFilePath.FullName)" `
-    --metadata-file="$metadataExtraFile" `
-    -f markdown+backtick_code_blocks+pipe_tables+auto_identifiers+yaml_metadata_block+table_captions+footnotes+smart+escaped_line_breaks `
-    --template="$($templateFilePath.FullName)" `
-    --filter pandoc-latex-environment `
-    --output="$OutFile";
+  if ($markdowncontent -match 'plantuml') {
+    $markdowncontent | & pandoc `
+      --standalone `
+      --listings `
+      --pdf-engine=xelatex `
+      --metadata-file="$($metadataFilePath.FullName)" `
+      --metadata-file="$metadataExtraFile" `
+      -f markdown+backtick_code_blocks+pipe_tables+auto_identifiers+yaml_metadata_block+table_captions+footnotes+smart+escaped_line_breaks `
+      --template="$($templateFilePath.FullName)" `
+      --filter pandoc-latex-environment `
+      --filter pandoc-plantuml `
+      --output="$OutFile";
+  } else {
+    $markdowncontent | & pandoc `
+      --standalone `
+      --listings `
+      --pdf-engine=xelatex `
+      --metadata-file="$($metadataFilePath.FullName)" `
+      --metadata-file="$metadataExtraFile" `
+      -f markdown+backtick_code_blocks+pipe_tables+auto_identifiers+yaml_metadata_block+table_captions+footnotes+smart+escaped_line_breaks `
+      --template="$($templateFilePath.FullName)" `
+      --filter pandoc-latex-environment `
+      --output="$OutFile";
+  }
   if (-not(Test-Path -Path $OutFile -PathType Leaf)) {
     Write-Warning -Message "Unable to create $OutFile"
   } else {

@@ -1,7 +1,43 @@
 {
-    "cSpell.words": [
-        "firstword",
-        "pandoc",
-        "secondword"
-    ]
-}
+    "editor.tabSize": 2,
+    "editor.tabCompletion": "on",
+    "editor.detectIndentation": false,
+    "editor.formatOnSave": true,
+    "editor.bracketPairColorization.enabled": true,
+    "markdownlint.config": {
+      "MD025": false,
+      "MD028": false,
+      "MD041": false
+    },
+    "cSpell.enableFiletypes": [
+      "!json",
+      "!jsonc",
+      "!latex",
+      "!markdown",
+      "!plaintext"
+    ],
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "files.encoding": "utf8",
+    "powershell.codeFormatting.preset": "OTBS",
+    "powershell.codeFormatting.ignoreOneLineBlock": false,
+    "powershell.codeFormatting.newLineAfterCloseBrace": false,
+    "[json]": {
+      "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "[jsonc]": {
+      "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "[arm-template]": {
+      "editor.defaultFormatter": "msazurermtools.azurerm-vscode-tools"
+    },
+    "[markdown]": {
+      "editor.wordWrap": "off",
+      "editor.tabSize": 2,
+      "editor.defaultFormatter": "yzhang.markdown-all-in-one"
+    },
+    "workbench.editorAssociations": {
+      "*.drawio.png": "hediet.vscode-drawio"
+    }
+  }
+  
