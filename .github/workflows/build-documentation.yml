@@ -208,7 +208,7 @@ jobs:
             pgf
             trimspaces
             lastpage
-            
+
       - name: Initialization for tlmgr
         run: |
           sudo apt-get update -qq && sudo apt-get install xzdec -y
@@ -217,7 +217,7 @@ jobs:
       - name: Setup fonts
         run: sudo apt-get update -qq && sudo apt-get install fonts-noto-cjk poppler-utils fonts-crosextra-carlito fonts-crosextra-caladea -y
 
-      - name: Setup image conversion tool
+      - name: Setup image conversion tools
         run: sudo apt-get update -qq && sudo apt-get install poppler-utils librsvg2-bin -y
 
       - name: Setup Python
@@ -282,27 +282,6 @@ jobs:
 
       # Expanded Script Sample
       # docs/build-docs.ps1 -OrderFile training/training.order -MetadataFile templates/azure-document.yaml -Template templates/azure-document.tex -OutFile training.pdf -DocsRootFolder docs
-
-      - name: Setup node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-
-      - name: Install pandoc-plantuml
-        run: npm install -g pandoc-plantuml
-
-#
-#      - name: Install python filters and converters
-#        run: |
-#          pip install pandoc-mermaid-filter
-#          pip install sphinxcontrib-svg2pdfconverter
-#
-      # Mermaid support is currently stuck at this error message:
-      # Error running filter pandoc-mermaid:
-      # Error in $: Failed reading: not a valid json value at 'Generatingsinglemermaidchart'
-      #    & npm install @mermaid-js/mermaid-cli;
-      #    $mmdcPath = Get-Item -Path ./node_modules/.bin/mmdc;
-      #    $env:MERMAID_BIN = $mmdcPath.FullName;
 
       - name: Build PDF
         shell: pwsh

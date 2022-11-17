@@ -167,30 +167,16 @@ if (-not($OutFile -match '\\' -or $OutFile -match '/')) {
 Write-Host -Object "Creating $OutFile";
 # We only want to use pandoc if the output file is not a markdown file
 if ($OutFile -notmatch '\.md$') {
-  if ($markdowncontent -match 'plantuml') {
-    $markdowncontent | & pandoc `
-      --standalone `
-      --listings `
-      --pdf-engine=xelatex `
-      --metadata-file="$($metadataFilePath.FullName)" `
-      --metadata-file="$metadataExtraFile" `
-      -f markdown+backtick_code_blocks+pipe_tables+auto_identifiers+yaml_metadata_block+table_captions+footnotes+smart+escaped_line_breaks `
-      --template="$($templateFilePath.FullName)" `
-      --filter pandoc-latex-environment `
-      --filter pandoc-plantuml `
-      --output="$OutFile";
-  } else {
-    $markdowncontent | & pandoc `
-      --standalone `
-      --listings `
-      --pdf-engine=xelatex `
-      --metadata-file="$($metadataFilePath.FullName)" `
-      --metadata-file="$metadataExtraFile" `
-      -f markdown+backtick_code_blocks+pipe_tables+auto_identifiers+yaml_metadata_block+table_captions+footnotes+smart+escaped_line_breaks `
-      --template="$($templateFilePath.FullName)" `
-      --filter pandoc-latex-environment `
-      --output="$OutFile";
-  }
+  $markdowncontent | & pandoc `
+    --standalone `
+    --listings `
+    --pdf-engine=xelatex `
+    --metadata-file="$($metadataFilePath.FullName)" `
+    --metadata-file="$metadataExtraFile" `
+    -f markdown+backtick_code_blocks+pipe_tables+auto_identifiers+yaml_metadata_block+table_captions+footnotes+smart+escaped_line_breaks `
+    --template="$($templateFilePath.FullName)" `
+    --filter pandoc-latex-environment `
+    --output="$OutFile";
   if (-not(Test-Path -Path $OutFile -PathType Leaf)) {
     Write-Warning -Message "Unable to create $OutFile"
   } else {
