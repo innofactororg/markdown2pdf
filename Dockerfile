@@ -31,6 +31,7 @@ RUN tlmgr install \
     footmisc \
     footnotebackref \
     fvextra \
+    hardwrap \
     index \
     jknapltx \
     koma-script \
