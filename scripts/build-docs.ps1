@@ -75,7 +75,7 @@ $mergeLogs = @(
   if ($ForceDefault) {
     "$DefaultAuthor|$currentDate|tag: rel/repo/1.0.0|$DefaultDescription"
   } else {
-    & git --no-pager log --date-order --date=format:'%B %e, %Y' --first-parent --no-merges --pretty=format:'%an|%ad|%D|%s' -- $orderFilePath.DirectoryName
+    & git --no-pager log --date-order --date=format:'%b %e, %Y' --first-parent --no-merges --pretty=format:'%an|%ad|%D|%s' -- $orderFilePath.DirectoryName
   }
 );
 $authors = @(
