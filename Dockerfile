@@ -1,14 +1,5 @@
 FROM mcr.microsoft.com/powershell
 
-# List installed latex packages
-#RUN tlmgr info --only-installed --data name
-
-# Update TeX Live
-#RUN tlmgr update --self
-
-# Update TeX Live packages
-#RUN tlmgr update --all
-
 # Install apt-utils wget and curl
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get -qq update
@@ -17,6 +8,18 @@ RUN apt-get -qq install wget curl
 
 # Install TeX Live
 RUN apt-get -qq install texlive
+
+# Initialization for tlmgr
+RUN tlmgr init-usertree
+
+# List installed latex packages
+#RUN tlmgr info --only-installed --data name
+
+# Update TeX Live
+#RUN tlmgr update --self
+
+# Update TeX Live packages
+#RUN tlmgr update --all
 
 # Install TeX Live packages
 RUN tlmgr install \
@@ -81,9 +84,6 @@ RUN tlmgr install \
     xecjk \
     xltxtra \
     zref
-
-# Initialization for tlmgr
-RUN tlmgr init-usertree
 
 # Install pandoc
 RUN wget -qO- "https://github.com/jgm/pandoc/releases/download/2.19.2/pandoc-2.19.2-linux-amd64.tar.gz" | tar xzf - --strip-components 1 -C "/usr/local/"
