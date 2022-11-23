@@ -41,22 +41,19 @@ ENV PATH="${PATH}:/usr/local/texlive/bin/x86_64-linux:/usr/local/bin"
 # Install TeX Live packages
 RUN tlmgr install \
     adjustbox \
-    afterpage \
-    amsfonts \
-    amsmath \
+##    amsfonts \
+##    amsmath \
     amssymb \
     anysize \
-    array \
     awesomebox \
-    babel \
+##    babel \
     background \
-    beamerarticle \
+    beamer \
     biblatex \
     bidi \
-    bookmark \
+##    bookmark \
     booktabs \
     breqn \
-    calc \
     caption \
     catchfile \
     cite \
@@ -71,35 +68,30 @@ RUN tlmgr install \
     etoolbox \
     extsizes \
     fancybox \
-    fancyhdr \
+##    fancyhdr \
     fancyref \
     fancyvrb \
     fontawesome5 \
-    fontenc \
     footmisc \
-    footnote \
     footnotebackref \
     footnotehyper \
     fvextra \
-    geometry \
-    graphicx \
+##    geometry \
     hardwrap \
-    hyperref \
-    iftex \
+##    hyperref \
+##    iftex \
     index \
-    inputenc \
     jknapltx \
     koma-script \
     l3experimental \
     lastpage \
     latexbug \
+    latex-tools \
     lineno \
     listings \
-    lmodern \
-    longtable \
+    lm \
     lwarp \
-    luatexja-fontspec \
-    luatexja-preset \
+    luatexja \
     ly1 \
     mathspec \
     mathtools \
@@ -109,13 +101,13 @@ RUN tlmgr install \
     microtype \
     multirow \
     mweights \
-    natbib \
+##    natbib \
     needspace \
     ntgclass \
     pagecolor \
     parskip \
     pdfpages \
-    pgfpages \
+    pgf \
     powerdot \
     psfrag \
     rcs \
@@ -131,7 +123,6 @@ RUN tlmgr install \
     tcolorbox \
     textcase \
     thumbpdf \
-    tikz \
     titling \
     trimspaces \
     typehtml \
