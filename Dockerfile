@@ -43,7 +43,6 @@ RUN tlmgr install \
     adjustbox \
 ##    amsfonts \
 ##    amsmath \
-    amssymb \
     anysize \
     awesomebox \
 ##    babel \
@@ -86,10 +85,9 @@ RUN tlmgr install \
     l3experimental \
     lastpage \
     latexbug \
-    latex-tools \
     lineno \
     listings \
-    lm \
+##    lm \
     lwarp \
     luatexja \
     ly1 \
@@ -124,6 +122,7 @@ RUN tlmgr install \
     textcase \
     thumbpdf \
     titling \
+    tools \
     trimspaces \
     typehtml \
     ucharcat \
