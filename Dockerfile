@@ -122,7 +122,7 @@ RUN tlmgr install \
     textcase \
     thumbpdf \
     titling \
-    tools \
+##    tools \
     trimspaces \
     typehtml \
     ucharcat \
