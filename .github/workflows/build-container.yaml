@@ -1,0 +1,24 @@
+name: Build Container
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - '*'
+jobs:
+  build_container:
+    name: Build Container
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Log in to innofactoriac.azurecr.io
+        uses: azure/docker-login@v1
+        with:
+          login-server: innofactoriac.azurecr.io
+          username: e849ad7a-bdb8-4814-91cf-3b269440cb65
+          password: ${{ secrets.AZURE_DEPLOY_ACR_BUILD_CLIENT_SECRET }}
+      - name: Build and push image
+        run: |
+          docker build . --tag innofactoriac.azurecr.io/mdconvert:${GITHUB_REF_NAME} --tag innofactoriac.azurecr.io/mdconvert:latest
+          docker push --all-tags innofactoriac.azurecr.io/mdconvert

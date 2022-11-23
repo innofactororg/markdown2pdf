@@ -1,0 +1,131 @@
+---
+name: 🧳 Convert Markdown
+
+on:
+  workflow_call:
+    inputs:
+      OrderFile:
+        required: true
+        type: string
+      Title:
+        required: false
+        type: string
+        default: Azure Cloud Framework
+      Subtitle:
+        required: false
+        type: string
+        default: DESIGN DOCUMENT
+      MetadataFile:
+        required: false
+        type: string
+        default: templates/azure-document.yaml
+      Template:
+        required: false
+        type: string
+        default: templates/azure-document.tex
+      OutFile:
+        required: true
+        type: string
+      DocsRootFolder:
+        required: false
+        type: string
+        default: docs
+      BuildBranch:
+        required: false
+        type: string
+        default: main
+      DefaultAuthor:
+        required: false
+        type: string
+        default: Innofactor
+      DefaultDescription:
+        required: false
+        type: string
+        default: Initial draft
+      ForceDefault:
+        required: false
+        type: boolean
+        default: false
+      RetentionDays:
+        required: false
+        type: integer
+        default: 5
+
+jobs:
+  build:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    container:
+      image: innofactoriac.azurecr.io/azuredeploy:latest
+      credentials:
+        username: e849ad7a-bdb8-4814-91cf-3b269440cb65
+        password: ${{ secrets.AZURE_DEPLOY_ACR_BUILD_CLIENT_SECRET }}
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - name: Clone repository for building
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Download the build script
+        run: curl -f -o ${{ inputs.DocsRootFolder }}/build-docs.ps1 https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/${{ inputs.BuildBranch }}/scripts/build-docs.ps1
+
+      - name: Create Template area
+        run: mkdir ${{ inputs.DocsRootFolder }}/templates
+
+      - name: Download the Cover Image
+        run: curl -f -o ${{ inputs.DocsRootFolder }}/templates/cover.png https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/${{ inputs.BuildBranch }}/templates/cover.png
+
+      - name: Download the Logo
+        run: curl -f -o ${{ inputs.DocsRootFolder }}/templates/logo.png https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/${{ inputs.BuildBranch }}/templates/logo.png
+
+      - name: Download the LaTeX Template
+        run: curl -f -o ${{ inputs.DocsRootFolder }}/${{ inputs.Template }} https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/${{ inputs.BuildBranch }}/${{ inputs.Template }}
+
+      - name: Download the Pandoc Meta Data file
+        run: curl -f -o ${{ inputs.DocsRootFolder }}/${{ inputs.MetadataFile }} https://raw.githubusercontent.com/innofactororg/ghw-markdown-convert/${{ inputs.BuildBranch }}/${{ inputs.MetadataFile }}
+
+      - name: Update the Document Title
+        run: yq eval -i '.title = "${{ inputs.Title }}"' ${{ inputs.DocsRootFolder }}/${{ inputs.MetadataFile }}
+
+      - name: Update the Document Subtitle
+        run: yq eval -i '.subtitle = "${{ inputs.Subtitle }}"' ${{ inputs.DocsRootFolder }}/${{ inputs.MetadataFile }}
+
+      - name: Update the path to titlepage-top-cover-image
+        run: yq eval -i '.titlepage-top-cover-image = "../templates/cover.png"' ${{ inputs.DocsRootFolder }}/${{ inputs.MetadataFile }}
+
+      - name: Update the path to logo
+        run: yq eval -i '.logo = "../templates/logo.png"' ${{ inputs.DocsRootFolder }}/${{ inputs.MetadataFile }}
+
+      - name: Give script permissions
+        run: chmod +x ${{ inputs.DocsRootFolder }}/build-docs.ps1
+
+      # - name: Setup upterm session
+      #   uses: lhotari/action-upterm@v1
+      #   with:
+      #     ## limits ssh access and adds the ssh public key for the user which triggered the workflow
+      #     limit-access-to-actor: false
+
+      # - name: Setup tmate session
+      #   uses: mxschmitt/action-tmate@v3
+      #   with:
+      #     limit-access-to-actor: true
+
+      # Expanded Script Sample
+      # docs/build-docs.ps1 -OrderFile training/training.order -MetadataFile templates/azure-document.yaml -Template templates/azure-document.tex -OutFile training.pdf -DocsRootFolder docs
+
+      - name: Build PDF
+        shell: pwsh
+        run: |
+          $Global:ProgressPreference = 'SilentlyContinue';
+          $forceDefault = '${{ inputs.ForceDefault }}' -eq 'true';
+          & ${{ inputs.DocsRootFolder }}/build-docs.ps1 -OrderFile '${{ inputs.OrderFile }}' -MetadataFile '${{ inputs.MetadataFile }}' -Template '${{ inputs.Template }}' -OutFile '${{ inputs.OutFile }}' -DocsRootFolder '${{ inputs.DocsRootFolder }}' -DefaultAuthor '${{ inputs.DefaultAuthor }}' -DefaultDescription '${{ inputs.DefaultDescription }}' -ForceDefault:$forceDefault
+
+      - name: Publish PDF
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ inputs.OutFile }}
+          if-no-files-found: error
+          retention-days: ${{ inputs.RetentionDays }}
+          path: "${{ github.workspace }}/${{ inputs.OutFile }}"
