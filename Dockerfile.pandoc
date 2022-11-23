@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/powershell
+FROM pandoc/latex:2-ubuntu
 
 # List installed latex packages
 #RUN tlmgr info --only-installed --data name
@@ -8,15 +8,6 @@ FROM mcr.microsoft.com/powershell
 
 # Update TeX Live packages
 #RUN tlmgr update --all
-
-# Install apt-utils wget and curl
-ARG DEBIAN_FRONTEND=noninteractive
-RUN apt-get -qq update
-RUN apt-get -qq install apt-utils
-RUN apt-get -qq install wget curl
-
-# Install TeX Live
-RUN apt-get -qq install texlive
 
 # Install TeX Live packages
 RUN tlmgr install \
@@ -85,8 +76,11 @@ RUN tlmgr install \
 # Initialization for tlmgr
 RUN tlmgr init-usertree
 
-# Install pandoc
-RUN wget -qO- "https://github.com/jgm/pandoc/releases/download/2.19.2/pandoc-2.19.2-linux-amd64.tar.gz" | tar xzf - --strip-components 1 -C "/usr/local/"
+# Install apt-utils wget and curl
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get -qq update
+RUN apt-get -qq install apt-utils
+RUN apt-get -qq install wget curl
 
 # Install fonts
 RUN apt-get -qq install fonts-noto-cjk fonts-crosextra-carlito fonts-crosextra-caladea
@@ -99,6 +93,21 @@ RUN apt-get -qq install python3 python3-pip
 
 # Install pandoc filters
 RUN pip install pandoc-latex-environment
+
+# Install pre-requisite packages for PowerShell
+RUN apt-get -qq install apt-transport-https software-properties-common
+
+# Download the Microsoft repository GPG keys
+RUN wget -q "https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb"
+
+# Register the Microsoft repository GPG keys
+RUN dpkg -i packages-microsoft-prod.deb
+
+# Update the list of packages after we added packages.microsoft.com
+RUN apt-get -qq update
+
+# Install PowerShell
+RUN apt-get -qq install powershell
 
 # Install yq
 RUN wget -q https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq \
