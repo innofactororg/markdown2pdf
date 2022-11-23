@@ -100,6 +100,13 @@ RUN apt-get -qq update
 # Install PowerShell
 RUN apt-get -qq install powershell
 
+# Install curl
+RUN apt-get -qq install curl
+
+# Install yq
+RUN wget -q https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq \
+    && chmod +x /usr/bin/yq
+
 #SHELL ["pwsh", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 
 # Copy entrypoint script
