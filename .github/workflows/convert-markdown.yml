@@ -56,7 +56,7 @@ jobs:
     name: Build Documentation
     runs-on: ubuntu-latest
     container:
-      image: innofactoriac.azurecr.io/azuredeploy:latest
+      image: innofactoriac.azurecr.io/mdconvert:latest
       credentials:
         username: e849ad7a-bdb8-4814-91cf-3b269440cb65
         password: ${{ secrets.AZURE_DEPLOY_ACR_BUILD_CLIENT_SECRET }}
