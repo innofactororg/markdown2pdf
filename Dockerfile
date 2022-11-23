@@ -4,10 +4,10 @@ FROM pandoc/latex:2-ubuntu
 #RUN tlmgr info --only-installed --data name
 
 # Update TeX Live
-RUN tlmgr update --self
+#RUN tlmgr update --self
 
 # Update TeX Live packages
-RUN tlmgr update --all
+#RUN tlmgr update --all
 
 # Install TeX Live packages
 RUN tlmgr install \
@@ -74,9 +74,11 @@ RUN tlmgr install \
 # Initialization for tlmgr
 RUN tlmgr init-usertree
 
-# Install apt-utils
+# Install apt-utils wget and curl
 ARG DEBIAN_FRONTEND=noninteractive
-RUN apt-get -qq update && apt-get -qq install apt-utils
+#RUN apt-get -qq update
+RUN apt-get -qq install apt-utils
+RUN apt-get -qq install wget curl
 
 # Install fonts
 RUN apt-get -qq install fonts-noto-cjk fonts-crosextra-carlito fonts-crosextra-caladea
@@ -91,7 +93,7 @@ RUN apt-get -qq install python3 python3-pip
 RUN pip install pandoc-latex-environment
 
 # Install pre-requisite packages for PowerShell
-RUN apt-get -qq install wget apt-transport-https software-properties-common
+RUN apt-get -qq install apt-transport-https software-properties-common
 
 # Download the Microsoft repository GPG keys
 RUN wget -q "https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb"
@@ -104,9 +106,6 @@ RUN apt-get -qq update
 
 # Install PowerShell
 RUN apt-get -qq install powershell
-
-# Install curl
-RUN apt-get -qq install curl
 
 # Install yq
 RUN wget -q https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq \
