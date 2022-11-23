@@ -48,7 +48,6 @@ collection-metapost 0
 collection-music 0
 collection-omega 0
 collection-pictures 0
-collection-plainextra 0
 collection-pstricks 0
 collection-publishers 0
 collection-science 0
