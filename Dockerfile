@@ -20,7 +20,7 @@ WORKDIR /rootbase
 
 # Download the latest TeX Live installer
 RUN curl -L -O http://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz \
-    && mkdir /rootbase/install-tl
+    && mkdir /rootbase/install-tl \
     && tar xzf install-tl-unx.tar.gz --strip-components 1 -C "/rootbase/install-tl" \
     && rm install-tl-unx.tar.gz
 
