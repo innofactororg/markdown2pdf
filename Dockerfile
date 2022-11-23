@@ -83,7 +83,7 @@ RUN apt-get -qq install poppler-utils librsvg2-bin
 RUN apt-get -qq install python3 python3-pip
 
 # Install pandoc filters
-RUN pip install --root-user-action=ignore pandoc-latex-environment
+RUN pip install pandoc-latex-environment
 
 # Install pre-requisite packages for PowerShell
 RUN apt-get -qq install wget apt-transport-https software-properties-common
