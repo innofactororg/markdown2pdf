@@ -1,3 +1,4 @@
+# https://github.com/CharleneMcKeown/github-runner-aci
 FROM mcr.microsoft.com/powershell
 
 # Install requirements
@@ -98,6 +99,7 @@ RUN tlmgr install \
     typehtml \
     ucharcat \
     underscore \
+    unicode-math \
     xecjk \
     xltxtra \
     zref
