@@ -41,51 +41,88 @@ ENV PATH="${PATH}:/usr/local/texlive/bin/x86_64-linux:/usr/local/bin"
 # Install TeX Live packages
 RUN tlmgr install \
     adjustbox \
+    afterpage \
+    amsfonts \
+    amsmath \
+    amssymb \
     anysize \
+    array \
     awesomebox \
+    babel \
     background \
+    beamerarticle \
+    biblatex \
+    bidi \
+    bookmark \
+    booktabs \
     breqn \
+    calc \
+    caption \
     catchfile \
     cite \
     collectbox \
     crop \
+    csquotes \
     ctable \
     enumitem \
     environ \
     eso-pic \
     everypage \
+    etoolbox \
     extsizes \
     fancybox \
+    fancyhdr \
     fancyref \
+    fancyvrb \
     fontawesome5 \
+    fontenc \
     footmisc \
+    footnote \
     footnotebackref \
+    footnotehyper \
     fvextra \
+    geometry \
+    graphicx \
     hardwrap \
+    hyperref \
+    iftex \
     index \
+    inputenc \
     jknapltx \
     koma-script \
     l3experimental \
     lastpage \
     latexbug \
     lineno \
+    listings \
+    lmodern \
+    longtable \
     lwarp \
+    luatexja-fontspec \
+    luatexja-preset \
     ly1 \
+    mathspec \
     mathtools \
     mdframed \
     mdwtools \
     metalogo \
+    microtype \
+    multirow \
     mweights \
+    natbib \
     needspace \
     ntgclass \
     pagecolor \
+    parskip \
     pdfpages \
+    pgfpages \
     powerdot \
     psfrag \
     rcs \
     sansmath \
     section \
     sectsty \
+    selnolig \
     seminar \
     sepnum \
     setspace \
@@ -94,14 +131,19 @@ RUN tlmgr install \
     tcolorbox \
     textcase \
     thumbpdf \
+    tikz \
     titling \
     trimspaces \
     typehtml \
     ucharcat \
+    ulem \
     underscore \
     unicode-math \
+    upquote \
     xecjk \
+    xcolor \
     xltxtra \
+    xurl \
     zref
 
 # Install pandoc
