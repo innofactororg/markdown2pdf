@@ -45,6 +45,8 @@ param (
   [switch]
   $ForceDefault
 )
+$culture = New-Object System.Globalization.CultureInfo('en-US');
+$currentDate = (Get-Date).ToString('MMMM d, yyyy', $culture);
 $currentPath = Get-Item -Path .;
 $docsRootPath = Join-Path -Path $currentPath.FullName -ChildPath $DocsRootFolder;
 $orderFilePath = $(
@@ -70,12 +72,16 @@ $templateFilePath = $(
 );
 # We need to get information from git log and we need to run this from root folder
 $mergeLogs = @(
-  if (-not($ForceDefault)) {
+  if ($ForceDefault) {
+    "$DefaultAuthor|$currentDate|tag: rel/repo/1.0.0|$DefaultDescription"
+  } else {
     & git --no-pager log --date-order --date=format:'%B %e, %Y' --first-parent --no-merges --pretty=format:'%an|%ad|%D|%s' -- $orderFilePath.DirectoryName
   }
 );
 $authors = @(
-  if (-not($ForceDefault)) {
+  if ($ForceDefault) {
+    $DefaultAuthor
+  } else {
     & git --no-pager log --first-parent --no-merges --pretty=format:"%an" -- $orderFilePath.DirectoryName | Select-Object -Unique
   }
 );
@@ -117,33 +123,31 @@ $markdowncontent = $(
 $metadataExtraFile = Join-Path -Path $metadataFilePath.DirectoryName -ChildPath 'latest-release-info.json';
 # Set location path to a specific folder in the docs folder, e.g. docs/detaileddesign
 Set-Location -Path $orderFilePath.DirectoryName;
-$culture = New-Object System.Globalization.CultureInfo('en-US');
-$currentDate = (Get-Date).ToString('MMMM d, yyyy', $culture);
 if ($mergeLogs.Count -eq 0 -and $authors.Count -ge 1) {
   $mergeLogs = @("$($authors[0])|$currentDate|tag: rel/repo/1.0.0|$DefaultDescription")
 } elseif ($mergeLogs.Count -eq 0) {
   $mergeLogs = @("$DefaultAuthor|$currentDate|tag: rel/repo/1.0.0|$DefaultDescription")
 };
-$i = 0;
+$i = $mergeLogs.Count;
 $versionHistory = @(
   foreach ($mergeLog in $mergeLogs) {
     $items = @($mergeLog.Split('|'));
-    $refNamesTag = @($items[2] -split 'tag:');
-    $version = $(
-      if ($refNamesTag.Count -eq 2 -and $refNamesTag[1] -match 'rel/') {
-        @(@($refNamesTag[1] -split ',')[0] -split '/')[-1]
-      } else {
-        "1.0.$i"
-      }
-    );
     if ($items.Count -ge 4) {
+      $i--;
+      $refNamesTag = @($items[2] -split 'tag:');
+      $version = $(
+        if ($refNamesTag.Count -eq 2 -and $refNamesTag[1] -match 'rel/') {
+          @(@($refNamesTag[1] -split ',')[0] -split '/')[-1]
+        } else {
+          "1.0.$i"
+        }
+      );
       @{
         "version"     = $version;
         "date"        = $items[1].Replace('  ', ' ');
         "author"      = $items[0];
         "description" = $items[3]
       };
-      $i++;
     }
   }
 );
