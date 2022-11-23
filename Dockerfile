@@ -3,9 +3,14 @@ FROM pandoc/latex:2-ubuntu
 # List installed latex packages
 #RUN tlmgr info --only-installed --data name
 
+# Update TeX Live
+RUN tlmgr update --self
+
+# Update TeX Live packages
+RUN tlmgr update --all
+
 # Install TeX Live packages
-RUN tlmgr update --all && \
-    tlmgr install \
+RUN tlmgr install \
     adjustbox \
     anysize \
     awesomebox \
@@ -106,6 +111,9 @@ RUN apt-get -qq install curl
 # Install yq
 RUN wget -q https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq \
     && chmod +x /usr/bin/yq
+
+# Install git
+RUN apt-get -qq install git
 
 #SHELL ["pwsh", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 
