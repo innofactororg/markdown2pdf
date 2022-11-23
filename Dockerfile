@@ -87,6 +87,7 @@ RUN tlmgr install \
     sectsty \
     seminar \
     sepnum \
+    setspace \
     sourcecodepro \
     sourcesanspro \
     tcolorbox \
