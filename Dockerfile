@@ -16,6 +16,7 @@ RUN tlmgr install \
     awesomebox \
     background \
     breqn \
+    catchfile \
     cite \
     collectbox \
     crop \
