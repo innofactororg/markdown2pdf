@@ -48,7 +48,7 @@ on:
         default: false
       RetentionDays:
         required: false
-        type: integer
+        type: number
         default: 5
 
 jobs:

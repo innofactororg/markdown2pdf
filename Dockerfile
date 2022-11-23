@@ -100,9 +100,6 @@ RUN apt-get -qq update
 # Install PowerShell
 RUN apt-get -qq install powershell
 
-# Register PSGallery
-RUN pwsh -Command Register-PSRepository -Default
-
 #SHELL ["pwsh", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 
 # Copy entrypoint script
