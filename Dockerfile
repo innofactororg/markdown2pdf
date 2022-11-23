@@ -76,7 +76,7 @@ RUN tlmgr init-usertree
 
 # Install apt-utils wget and curl
 ARG DEBIAN_FRONTEND=noninteractive
-#RUN apt-get -qq update
+RUN apt-get -qq update
 RUN apt-get -qq install apt-utils
 RUN apt-get -qq install wget curl
 
