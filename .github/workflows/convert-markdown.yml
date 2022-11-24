@@ -82,9 +82,9 @@ jobs:
           $forceDefault = '${{ inputs.ForceDefault }}' -eq 'true';
           & git config --global safe.directory '*';
           Write-Host 'Root folder:'
-          Get-ChildItem -Path /
+          Get-ChildItem -Path / | Select-Object -ExpandProperty FullName
           Write-Host 'Folder /usr/local:'
-          Get-ChildItem -Path /usr/local
+          Get-ChildItem -Path /usr/local | Select-Object -ExpandProperty FullName
           & /usr/local/mdconvert/mdconvert.ps1 -Title '${{ inputs.Title }}' -Subtitle '${{ inputs.Subtitle }}' -Project '${{ inputs.Project }}' -Folder '${{ inputs.Folder }}' -Template '${{ inputs.Template }}' -OrderFile '${{ inputs.OrderFile }}' -OutFile '${{ inputs.OutFile }}' -DefaultAuthor '${{ inputs.DefaultAuthor }}' -DefaultDescription '${{ inputs.DefaultDescription }}' -ForceDefault:$forceDefault
 
       - name: Publish PDF

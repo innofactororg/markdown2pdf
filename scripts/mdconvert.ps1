@@ -189,7 +189,7 @@ try {
     'version-history'               = $versionHistory;
     mainfont                        = $font
   } | ConvertTo-Json;
-  $metadataFile = Join-Path -Path $docsPath.DirectoryName -ChildPath 'metadata.json';
+  $metadataFile = Join-Path -Path $docsPath -ChildPath 'metadata.json';
   Set-Content -Path $metadataFile -Value $metadataContent -Force -Encoding utf8;
   # Ensure outfile has full path
   if (-not($OutFile -match '^.?:\\.*' -or $OutFile -match '^/')) {
