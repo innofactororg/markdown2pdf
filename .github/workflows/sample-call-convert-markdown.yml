@@ -1,5 +1,5 @@
 ---
-name: Build Sample
+name: 🧳 Sample Call Convert Markdown
 on:
   workflow_dispatch:
   pull_request:
