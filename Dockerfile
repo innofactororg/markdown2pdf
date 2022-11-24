@@ -1,4 +1,3 @@
-# https://github.com/CharleneMcKeown/github-runner-aci
 FROM mcr.microsoft.com/powershell
 
 # Install requirements
@@ -17,25 +16,23 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /rootbase
+# Copy files from repo to docker image
+COPY texlive-profile.txt /rootbase/install-tl/
+COPY templates/designdoc* /usr/local/mdconvert/
+COPY scripts/mdconvert.ps1 /usr/local/mdconvert/
+
+# Give the ps1 script execute permission
+RUN chmod +x /usr/local/mdconvert/mdconvert.ps1
+
+# Set a workdir for installation of TeX Live
+WORKDIR /rootbase/install-tl
 
 # Download the latest TeX Live installer
 RUN curl -L -O http://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz \
-    && mkdir /rootbase/install-tl \
-    && tar xzf install-tl-unx.tar.gz --strip-components 1 -C "/rootbase/install-tl" \
-    && rm install-tl-unx.tar.gz
-
-WORKDIR install-tl
-
-COPY texlive-profile.txt /rootbase/install-tl
+    && tar xzf install-tl-unx.tar.gz --strip-components 1 -C "/rootbase/install-tl"
 
 # Install TeX Live
 RUN /rootbase/install-tl/install-tl --profile=/rootbase/install-tl/texlive-profile.txt
-
-WORKDIR /
-
-RUN rm -rf /rootbase
-
 ENV PATH="${PATH}:/usr/local/texlive/bin/x86_64-linux:/usr/local/bin"
 
 # Install TeX Live packages
@@ -143,13 +140,10 @@ RUN wget -qO- "https://github.com/jgm/pandoc/releases/download/2.19.2/pandoc-2.1
 RUN pip install pandoc-latex-environment
 
 # Install yq
-RUN wget -q https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq \
-    && chmod +x /usr/bin/yq
+#RUN wget -q https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq \
+#    && chmod +x /usr/bin/yq
 
-#SHELL ["pwsh", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
-
-# Copy entrypoint script
-#COPY entrypoint.sh /
-#RUN chmod +x /entrypoint.sh
-
-#ENTRYPOINT ["/entrypoint.sh"]
+# Clean up
+WORKDIR /
+RUN rm -rf /rootbase \
+    && apt-get purge -y --auto-remove wget curl

@@ -20,10 +20,10 @@ jobs:
           password: ${{ secrets.AZURE_DEPLOY_ACR_BUILD_CLIENT_SECRET }}
       - name: Build and push image
         run: |
-          if [ "${GITHUB_REF_NAME}" != "main" ]
+          if [ "${{ github.ref_name }}" != "main" ]
           then
-            docker build . --tag innofactoriac.azurecr.io/mdconvert:${GITHUB_REF_NAME} --tag innofactoriac.azurecr.io/mdconvert:latest
+            docker build . --tag innofactoriac.azurecr.io/mdconvert:${{ github.ref_name }} --tag innofactoriac.azurecr.io/mdconvert:latest
           else
-            docker build . --tag innofactoriac.azurecr.io/mdconvert:latest
+            docker build . --tag innofactoriac.azurecr.io/mdconvert:${{ github.run_number }} --tag innofactoriac.azurecr.io/mdconvert:latest
           fi
           docker push --all-tags innofactoriac.azurecr.io/mdconvert

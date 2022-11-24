@@ -1,0 +1,33 @@
+---
+name: Build Sample
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/sample/*.md'
+      - 'docs/sample/*.order'
+      - 'docs/sample/.attachments/**'
+  push:
+    paths:
+      - 'docs/sample/*.md'
+      - 'docs/sample/*.order'
+      - 'docs/sample/.attachments/**'
+
+jobs:
+  pdf:
+    name: Build PDF
+    uses: innofactororg/ghw-markdown-convert/.github/workflows/convert-markdown.yml@main
+    secrets: inherit
+    with:
+      Title: Sample
+      Subtitle: Document
+      Project: 808080
+      Folder: docs/sample
+      Template: designdoc
+      OrderFile: document.order
+      OutFile: Sample.pdf
+      DefaultAuthor: Innofactor
+      DefaultDescription: Initial draft
+      ForceDefault: false
+      RetentionDays: 5
