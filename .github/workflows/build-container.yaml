@@ -1,4 +1,5 @@
-name: Build Container
+---
+name: 🎍 Build Container
 
 on:
   workflow_dispatch:
