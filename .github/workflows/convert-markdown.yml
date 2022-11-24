@@ -56,8 +56,8 @@ jobs:
     container:
       image: innofactoriac.azurecr.io/mdconvert:latest
       credentials:
-        username: e849ad7a-bdb8-4814-91cf-3b269440cb65
-        password: ${{ secrets.AZURE_DEPLOY_ACR_BUILD_CLIENT_SECRET }}
+        username: fb505ffb-02a5-428c-9030-9d0809ba322d
+        password: ${{ secrets.INNOFACTORIAC_MDCONVERT_ACRPULL_CLIENT_SECRET }}
     steps:
       - name: Clone repository for building
         uses: actions/checkout@v3
@@ -81,10 +81,6 @@ jobs:
           $Global:ProgressPreference = 'SilentlyContinue';
           $forceDefault = '${{ inputs.ForceDefault }}' -eq 'true';
           & git config --global safe.directory '*';
-          Write-Host 'Root folder:'
-          Get-ChildItem -Path / | Select-Object -ExpandProperty FullName
-          Write-Host 'Folder /usr/local:'
-          Get-ChildItem -Path /usr/local | Select-Object -ExpandProperty FullName
           & /usr/local/mdconvert/mdconvert.ps1 -Title '${{ inputs.Title }}' -Subtitle '${{ inputs.Subtitle }}' -Project '${{ inputs.Project }}' -Folder '${{ inputs.Folder }}' -Template '${{ inputs.Template }}' -OrderFile '${{ inputs.OrderFile }}' -OutFile '${{ inputs.OutFile }}' -DefaultAuthor '${{ inputs.DefaultAuthor }}' -DefaultDescription '${{ inputs.DefaultDescription }}' -ForceDefault:$forceDefault
 
       - name: Publish PDF
