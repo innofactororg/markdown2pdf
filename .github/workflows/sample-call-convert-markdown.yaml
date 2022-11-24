@@ -17,7 +17,7 @@ on:
 jobs:
   pdf:
     name: Build PDF
-    uses: innofactororg/ghw-markdown-convert/.github/workflows/convert-markdown.yml@main
+    uses: innofactororg/ghw-markdown-convert/.github/workflows/convert-markdown.yaml@main
     secrets: inherit
     with:
       Title: Sample
