@@ -178,11 +178,11 @@ try {
     'footer-center'                 = 'Page (\thepage ) of \pageref{LastPage}';
     disclaimer                      = "This document contains business and trade secrets (essential information about Innofactor's business) and is therefore totally confidential. Confidentiality does not apply to pricing information";
     'pandoc-latex-environment'      = @{
-      noteblock      = @('note');
-      tipblock       = @('tip');
-      warningblock   = @('warning');
-      cautionblock   = @('caution');
-      importantblock = @('important');
+      noteblock      = @('note', 'Note', 'NOTE');
+      tipblock       = @('tip', 'Tip', 'TIP');
+      warningblock   = @('warning', 'Warning', 'WARNING');
+      cautionblock   = @('caution', 'Caution', 'CAUTION');
+      importantblock = @('important', 'Important', 'IMPORTANT');
     };
     date                            = $currentDate;
     author                          = $authors;
