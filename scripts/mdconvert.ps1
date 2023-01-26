@@ -198,6 +198,9 @@ try {
   Write-Host -Object "Creating $OutFile";
   # We only want to use pandoc if the output file is not a markdown file
   if ($OutFile -notmatch '\.md$') {
+    # We need to be in the path of the order file so image paths can be relative
+    Push-Location;
+    Set-Location -Path $orderFilePath.DirectoryName;
     $markdowncontent | & pandoc `
       --standalone `
       --listings `
@@ -207,6 +210,7 @@ try {
       --template="$($templateFilePath.FullName)" `
       --filter pandoc-latex-environment `
       --output="$OutFile";
+    Pop-Location;
     if (-not(Test-Path -Path $OutFile -PathType Leaf)) {
       Write-Warning -Message "Unable to create $OutFile"
     } else {
