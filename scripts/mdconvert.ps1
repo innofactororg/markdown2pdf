@@ -78,14 +78,14 @@ try {
     if ($ForceDefault) {
       "$DefaultAuthor|$currentDate|tag: rel/repo/1.0.0|$DefaultDescription"
     } else {
-      & git --no-pager log --date-order --date=format:'%b %e, %Y' --first-parent --no-merges --pretty=format:'%an|%ad|%D|%s' -- $orderFilePath.DirectoryName
+      & git --no-pager log --date-order --date=format:'%b %e, %Y' --no-merges --oneline --pretty=format:'%an|%ad|%D|%s' -- $orderFilePath.DirectoryName | Select-Object -Unique
     }
   );
   $authors = @(
     if ($ForceDefault) {
       $DefaultAuthor
     } else {
-      & git --no-pager log --first-parent --no-merges --pretty=format:"%an" -- $orderFilePath.DirectoryName | Select-Object -Unique
+      & git --no-pager log --no-merges --oneline --pretty=format:"%an" -- $orderFilePath.DirectoryName | Select-Object -Unique
     }
   );
   # Get the markdown files in OrderFile
