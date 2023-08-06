@@ -1,0 +1,26 @@
+name: "🎉 Release"
+run-name: "Release ${{ github.event.inputs.tag }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "The release tag"
+        required: true
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  release:
+    name: "Release"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: "Release"
+        uses: innofactororg/code-release@v1
+        with:
+          tag: ${{ github.event.inputs.tag }}
