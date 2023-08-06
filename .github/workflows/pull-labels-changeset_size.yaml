@@ -15,7 +15,7 @@ jobs:
       - name: Labeler
         uses: actions/labeler@v4
         with:
-          configuration-path: .github/labeler.yaml
+          configuration-path: .github/labeler.yml
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Label Size
