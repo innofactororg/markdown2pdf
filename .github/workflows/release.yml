@@ -1,5 +1,5 @@
 name: "🎉 Release"
-run-name: "Release ${{ github.event.inputs.tag }}"
+run-name: "Create release ${{ github.event.inputs.tag }}"
 
 on:
   workflow_dispatch:
