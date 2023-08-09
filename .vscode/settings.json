@@ -1,43 +1,26 @@
 {
+  "editor.accessibilitySupport": "off",
+  "editor.bracketPairColorization.enabled": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.detectIndentation": false,
+  "editor.fontSize": 14,
+  "editor.formatOnPaste": true,
+  "editor.formatOnSave": true,
+  "editor.tabCompletion": "on",
+  "editor.tabSize": 2,
+  "git.pruneOnFetch": true,
+  "git.enableSmartCommit": true,
+  "markdown.extension.orderedList.autoRenumber": false,
+  "workbench.editor.decorations.badges": true,
+  "workbench.editor.decorations.colors": true,
+  "workbench.startupEditor": "none",
+  "workbench.editor.wrapTabs": true,
+  "[markdown]": {
+    "editor.defaultFormatter": "yzhang.markdown-all-in-one",
     "editor.tabSize": 2,
-    "editor.tabCompletion": "on",
-    "editor.detectIndentation": false,
-    "editor.formatOnSave": true,
-    "editor.bracketPairColorization.enabled": true,
-    "markdownlint.config": {
-      "MD025": false,
-      "MD028": false,
-      "MD041": false
-    },
-    "cSpell.enableFiletypes": [
-      "!json",
-      "!jsonc",
-      "!latex",
-      "!markdown",
-      "!plaintext"
-    ],
-    "files.trimTrailingWhitespace": true,
-    "files.insertFinalNewline": true,
+    "editor.wordWrap": "off",
     "files.encoding": "utf8",
-    "powershell.codeFormatting.preset": "OTBS",
-    "powershell.codeFormatting.ignoreOneLineBlock": false,
-    "powershell.codeFormatting.newLineAfterCloseBrace": false,
-    "[json]": {
-      "editor.defaultFormatter": "vscode.json-language-features"
-    },
-    "[jsonc]": {
-      "editor.defaultFormatter": "vscode.json-language-features"
-    },
-    "[arm-template]": {
-      "editor.defaultFormatter": "msazurermtools.azurerm-vscode-tools"
-    },
-    "[markdown]": {
-      "editor.wordWrap": "off",
-      "editor.tabSize": 2,
-      "editor.defaultFormatter": "yzhang.markdown-all-in-one"
-    },
-    "workbench.editorAssociations": {
-      "*.drawio.png": "hediet.vscode-drawio"
-    }
+    "files.insertFinalNewline": true,
+    "files.trimTrailingWhitespace": true
   }
-  
+}
