@@ -9,16 +9,11 @@ name: 🧳 Convert Markdown
 on:
   workflow_dispatch:
   pull_request:
+    types: [opened, synchronize]
     branches: [main]
     paths:
       - 'docs/design/*.md'
       - 'docs/design/*.order'
-      - 'docs/design/.attachments/**'
-  push:
-    paths:
-      - 'docs/design/*.md'
-      - 'docs/design/*.order'
-      - 'docs/design/.attachments/**'
 
 jobs:
   pdf:
