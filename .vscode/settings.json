@@ -1,26 +1,42 @@
 {
+  "debug.internalConsoleOptions": "neverOpen",
   "editor.accessibilitySupport": "off",
   "editor.bracketPairColorization.enabled": true,
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.detectIndentation": false,
-  "editor.fontSize": 14,
-  "editor.formatOnPaste": true,
   "editor.formatOnSave": true,
+  "editor.guides.bracketPairs": "active",
   "editor.tabCompletion": "on",
   "editor.tabSize": 2,
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.encoding": "utf8",
   "git.pruneOnFetch": true,
   "git.enableSmartCommit": true,
+  "hediet.vscode-drawio.resizeImages": null,
   "markdown.extension.orderedList.autoRenumber": false,
-  "workbench.editor.decorations.badges": true,
+  "markdown.extension.toc.updateOnSave": false,
+  "markdownlint.config": {
+    "MD025": {
+      "front_matter_title": ""
+    },
+    "MD028": false,
+    "MD041": false
+  },
+  "workbench.editorAssociations": {
+    "*.drawio.png": "hediet.vscode-drawio"
+  },
   "workbench.editor.decorations.colors": true,
-  "workbench.startupEditor": "none",
+  "workbench.editor.decorations.badges": true,
   "workbench.editor.wrapTabs": true,
+  "workbench.startupEditor": "none",
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
   "[markdown]": {
     "editor.defaultFormatter": "yzhang.markdown-all-in-one",
-    "editor.tabSize": 2,
-    "editor.wordWrap": "off",
-    "files.encoding": "utf8",
-    "files.insertFinalNewline": true,
-    "files.trimTrailingWhitespace": true
+    "editor.wordWrap": "off"
   }
 }
