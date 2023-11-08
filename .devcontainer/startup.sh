@@ -7,7 +7,7 @@ if [ "${CODESPACES}" = "true" ]; then
   git config --global credential.helper '!f() { sleep 1; echo "username=${GITHUB_USER}"; echo "password=${GH_TOKEN}"; }; f'
 fi
 
-if [ $(git config --global --get safe.directory) != "*" ]; then
+if [ "$(git config --get safe.directory)" != "*" ]; then
   git config --global --add safe.directory "*"
 fi
 if [ "$(git config pull.rebase)" != "false" ]; then

@@ -32,6 +32,9 @@ if ! [ -d ~/.config ]; then
   command mkdir -p -- ~/.config
 fi
 /bin/cp -f .devcontainer/starship.toml ~/.config/starship.toml
-if [ ! -f ~/.zshrc ]; then
+if ! [ -f ~/.zshrc ]; then
+  touch ~/.zshrc
+fi
+if ! grep -q 'eval "$(starship init zsh)"' ~/.zshrc; then
   echo 'eval "$(starship init zsh)"' >>~/.zshrc
 fi
