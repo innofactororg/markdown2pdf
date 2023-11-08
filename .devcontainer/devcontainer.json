@@ -7,8 +7,7 @@
   "customizations": {
     "vscode": {
       "settings": {
-        "security.workspace.trust.untrustedFiles": "open",
-        "terminal.integrated.defaultProfile.linux": "zsh"
+        "security.workspace.trust.untrustedFiles": "open"
       },
       "extensions": [
         "bierner.markdown-preview-github-styles",
@@ -16,6 +15,7 @@
         "catppuccin.catppuccin-vsc-icons",
         "dbaeumer.vscode-eslint",
         "DavidAnson.vscode-markdownlint",
+        "esbenp.prettier-vscode",
         "GitHub.vscode-pull-request-github",
         "streetsidesoftware.code-spell-checker",
         "yzhang.markdown-all-in-one"

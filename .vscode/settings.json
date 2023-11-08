@@ -2,17 +2,22 @@
   "debug.internalConsoleOptions": "neverOpen",
   "editor.accessibilitySupport": "off",
   "editor.bracketPairColorization.enabled": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.detectIndentation": false,
+  "editor.fontFamily": "FiraCode Nerd Font Mono",
+  "editor.fontSize": 14,
+  "editor.formatOnPaste": true,
   "editor.formatOnSave": true,
   "editor.guides.bracketPairs": "active",
   "editor.tabCompletion": "on",
   "editor.tabSize": 2,
-  "files.trimTrailingWhitespace": true,
-  "files.insertFinalNewline": true,
+  "files.autoSave": "onFocusChange",
   "files.encoding": "utf8",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
   "git.pruneOnFetch": true,
   "git.enableSmartCommit": true,
-  "hediet.vscode-drawio.resizeImages": null,
+  "githubPullRequests.pullBranch": "always",
   "markdown.extension.orderedList.autoRenumber": false,
   "markdown.extension.toc.updateOnSave": false,
   "markdownlint.config": {
@@ -22,21 +27,22 @@
     "MD028": false,
     "MD041": false
   },
-  "workbench.editorAssociations": {
-    "*.drawio.png": "hediet.vscode-drawio"
-  },
+  "terminal.integrated.defaultProfile.linux": "zsh",
+  "workbench.colorTheme": "Catppuccin Mocha",
   "workbench.editor.decorations.colors": true,
   "workbench.editor.decorations.badges": true,
   "workbench.editor.wrapTabs": true,
+  "workbench.iconTheme": "catppuccin-macchiato",
   "workbench.startupEditor": "none",
-  "[json]": {
-    "editor.defaultFormatter": "vscode.json-language-features"
-  },
-  "[jsonc]": {
-    "editor.defaultFormatter": "vscode.json-language-features"
+  "[json,jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "[markdown]": {
-    "editor.defaultFormatter": "yzhang.markdown-all-in-one",
-    "editor.wordWrap": "off"
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.tabSize": 2,
+    "editor.wordWrap": "off",
+    "files.encoding": "utf8",
+    "files.insertFinalNewline": true,
+    "files.trimTrailingWhitespace": true
   }
 }
