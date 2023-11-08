@@ -19,3 +19,6 @@ fi
 if [ "$(git config user.email)" = "" ]; then
   echo "Warning: git user.email is not configured"
 fi
+
+pre-commit install
+pre-commit autoupdate

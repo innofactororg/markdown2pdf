@@ -21,9 +21,6 @@ pip install pre-commit
 tlmgr option -- autobackup -1
 tlmgr install lastpage
 
-pre-commit install
-pre-commit autoupdate
-
 if [ -f ~/.gitconfig ]; then
   rm ~/.gitconfig
 fi
