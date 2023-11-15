@@ -1,22 +1,44 @@
 {
+  "debug.internalConsoleOptions": "neverOpen",
   "editor.accessibilitySupport": "off",
   "editor.bracketPairColorization.enabled": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.detectIndentation": false,
+  "editor.fontFamily": "FiraCode Nerd Font Mono",
   "editor.fontSize": 14,
   "editor.formatOnPaste": true,
   "editor.formatOnSave": true,
+  "editor.guides.bracketPairs": "active",
   "editor.tabCompletion": "on",
   "editor.tabSize": 2,
+  "files.autoSave": "onFocusChange",
+  "files.encoding": "utf8",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
   "git.pruneOnFetch": true,
   "git.enableSmartCommit": true,
+  "githubPullRequests.pullBranch": "always",
   "markdown.extension.orderedList.autoRenumber": false,
-  "workbench.editor.decorations.badges": true,
+  "markdown.extension.toc.updateOnSave": false,
+  "markdownlint.config": {
+    "MD025": {
+      "front_matter_title": ""
+    },
+    "MD028": false,
+    "MD041": false
+  },
+  "terminal.integrated.defaultProfile.linux": "zsh",
+  "workbench.colorTheme": "Catppuccin Mocha",
   "workbench.editor.decorations.colors": true,
-  "workbench.startupEditor": "none",
+  "workbench.editor.decorations.badges": true,
   "workbench.editor.wrapTabs": true,
+  "workbench.iconTheme": "catppuccin-macchiato",
+  "workbench.startupEditor": "none",
+  "[json,jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
   "[markdown]": {
-    "editor.defaultFormatter": "yzhang.markdown-all-in-one",
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.tabSize": 2,
     "editor.wordWrap": "off",
     "files.encoding": "utf8",

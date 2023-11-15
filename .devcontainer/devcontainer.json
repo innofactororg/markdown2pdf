@@ -1,0 +1,25 @@
+{
+  "name": "markdown2pdf",
+  "image": "pandoc/extra:edge-alpine",
+  "onCreateCommand": ".devcontainer/setup.sh",
+  "postStartCommand": ".devcontainer/startup.sh",
+  "overrideCommand": true,
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "security.workspace.trust.untrustedFiles": "open"
+      },
+      "extensions": [
+        "bierner.markdown-preview-github-styles",
+        "catppuccin.catppuccin-vsc",
+        "catppuccin.catppuccin-vsc-icons",
+        "dbaeumer.vscode-eslint",
+        "DavidAnson.vscode-markdownlint",
+        "esbenp.prettier-vscode",
+        "GitHub.vscode-pull-request-github",
+        "streetsidesoftware.code-spell-checker",
+        "yzhang.markdown-all-in-one"
+      ]
+    }
+  }
+}

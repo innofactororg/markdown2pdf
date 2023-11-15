@@ -15,7 +15,7 @@ on:
       Project:
         required: false
         type: string
-        default: ''
+        default: ""
       Folder:
         required: false
         type: string
@@ -28,6 +28,14 @@ on:
         required: false
         type: string
         default: document.order
+      HistoryFile:
+        required: false
+        type: string
+        default: ""
+      ReplaceFile:
+        required: false
+        type: string
+        default: ""
       OutFile:
         required: false
         type: string
@@ -40,6 +48,10 @@ on:
         required: false
         type: string
         default: Initial draft
+      LimitVersionHistory:
+        required: false
+        type: number
+        default: 15
       ForceDefault:
         required: false
         type: boolean
@@ -54,34 +66,26 @@ jobs:
     name: Convert Markdown
     runs-on: ubuntu-latest
     container:
-      image: innofactoriac.azurecr.io/mdconvert:latest
-      credentials:
-        username: fb505ffb-02a5-428c-9030-9d0809ba322d
-        password: ${{ secrets.INNOFACTORIAC_MDCONVERT_ACRPULL_CLIENT_SECRET }}
+      image: pandoc/extra:edge-alpine
+      options: --entrypoint=sh
     steps:
-      - name: Clone repository for building
-        uses: actions/checkout@v3
+      - name: Clone repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # - name: Setup upterm session
-      #   uses: lhotari/action-upterm@v1
-      #   with:
-      #     ## limits ssh access and adds the ssh public key for the user which triggered the workflow
-      #     limit-access-to-actor: false
-
-      # - name: Setup tmate session
-      #   uses: mxschmitt/action-tmate@v3
-      #   with:
-      #     limit-access-to-actor: true
+      - name: Install requirements
+        shell: sh
+        run: |
+          apk add --no-cache git jq librsvg font-noto-cjk
+          apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community font-carlito
+          tlmgr install lastpage
 
       - name: Build PDF
-        shell: pwsh
+        shell: sh
         run: |
-          $Global:ProgressPreference = 'SilentlyContinue';
-          $forceDefault = '${{ inputs.ForceDefault }}' -eq 'true';
-          & git config --global safe.directory '*';
-          & /usr/local/mdconvert/mdconvert.ps1 -Title '${{ inputs.Title }}' -Subtitle '${{ inputs.Subtitle }}' -Project '${{ inputs.Project }}' -Folder '${{ inputs.Folder }}' -Template '${{ inputs.Template }}' -OrderFile '${{ inputs.OrderFile }}' -OutFile '${{ inputs.OutFile }}' -DefaultAuthor '${{ inputs.DefaultAuthor }}' -DefaultDescription '${{ inputs.DefaultDescription }}' -ForceDefault:$forceDefault
+          git config --global --add safe.directory '*'
+          tools/mdconvert.sh -a '${{ inputs.DefaultAuthor }}' -d '${{ inputs.DefaultDescription }}' -f '${{ inputs.Folder }}' -force '${{ inputs.ForceDefault }}' -h '${{ inputs.HistoryFile }}' -l ${{ inputs.LimitVersionHistory }} -o '${{ inputs.OrderFile }}' -out '${{ inputs.OutFile }}' -p '${{ inputs.Project }}' -r '${{ inputs.ReplaceFile }}' -s '${{ inputs.Subtitle }}' -t '${{ inputs.Title }}' --template '${{ inputs.Template }}'
 
       - name: Publish PDF
         uses: actions/upload-artifact@v3

@@ -8,7 +8,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Before opening a question, please search for the behaviour in the existing issues.
+        Before opening a question, please search for the behavior in the existing issues.
 
         ---
 

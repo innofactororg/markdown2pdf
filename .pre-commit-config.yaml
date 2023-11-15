@@ -1,0 +1,12 @@
+# See http://pre-commit.com for more information
+# See http://pre-commit.com/hooks.html for more hooks
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-case-conflict
+      - id: check-json
+      - id: check-yaml
+      - id: check-merge-conflict
+        args: ["--assume-in-merge"]
+      - id: detect-private-key

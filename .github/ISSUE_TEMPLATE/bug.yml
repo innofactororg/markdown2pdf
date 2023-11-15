@@ -8,7 +8,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Before opening a bug report, please search for the behaviour in the existing issues.
+        Before opening a bug report, please search for the behavior in the existing issues.
 
         ---
 
@@ -19,14 +19,6 @@ body:
       label: Operating system
       description: "Which operating system do you use? Please provide the version as well."
       placeholder: "macOS Big Sur 11.5.2"
-    validations:
-      required: true
-  - type: input
-    id: terraform
-    attributes:
-      label: Terraform Version
-      description: "Please provide the full Terraform version that you are using."
-      placeholder: "Terraform v1.2.3 on darwin_amd64"
     validations:
       required: true
   - type: textarea
