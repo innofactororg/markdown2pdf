@@ -100,7 +100,7 @@ jobs:
           TEMPLATE: ${{ inputs.Template }}
         run: |
           git config --global --add safe.directory '*'
-          curl -o mdconvert.sh -sSL https://raw.githubusercontent.com/innofactororg/markdown2pdf/v2.0.2/tools/mdconvert.sh
+          curl -o mdconvert.sh -sSL https://raw.githubusercontent.com/innofactororg/markdown2pdf/v2.0.3/tools/mdconvert.sh
           chmod +x ./mdconvert.sh
           ./mdconvert.sh -a "${AUTHOR}" -d "${DESCRIPTION}" -f "${FOLDER}" \
             -force "${FORCE_DEFAULT}" -h "${HISTORY}" -l ${LIMIT} \
