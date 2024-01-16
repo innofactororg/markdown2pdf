@@ -18,6 +18,7 @@ apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/commu
 
 pip install pre-commit
 
+tlmgr update --self
 tlmgr option -- autobackup -1
 tlmgr install lastpage
 

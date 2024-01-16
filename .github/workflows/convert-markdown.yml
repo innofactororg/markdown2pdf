@@ -79,6 +79,7 @@ jobs:
         run: |
           apk add --no-cache git jq librsvg font-noto-cjk
           apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community font-carlito
+          tlmgr update --self
           tlmgr install lastpage
 
       - name: Build PDF
