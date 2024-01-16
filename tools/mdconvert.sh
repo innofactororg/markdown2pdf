@@ -145,7 +145,7 @@ process_params() {
         shift 2
         ;;
       -o|--orderfile)
-        OrderFile=$(test_arg false "$@")
+        OrderFile=$(test_arg false '' "$@")
         shift 2
         ;;
       -out|--outfile)
@@ -206,10 +206,16 @@ fi
 if ! echo "$DocsPath" | grep -Eq '^[a-zA-Z]:\\.*' && ! echo "$DocsPath" | grep -Eq '^/.*'; then
   DocsPath="${currentPath}/${DocsPath}"
 fi
+if ! [ -d "${DocsPath}" ]; then
+  error '' "Unable to find folder ${DocsPath}" 1
+fi
 scriptPath=$(dirname -- $(realpath "$0"))
 # Get path to docs files in the same folder as the docs
 historyFilePath=$(get_file_path "$HistoryFile" $DocsPath)
 orderFilePath=$(get_file_path "$OrderFile" $DocsPath)
+if ! [ -f "${orderFilePath}" ]; then
+  error '' "Unable to find order file ${orderFilePath}" 1
+fi
 replaceFilePath=$(get_file_path "$ReplaceFile" $DocsPath)
 # Get path to template files in the same folder as the script
 templateFilePath=$(get_file_path "${Template}.tex" $scriptPath)
