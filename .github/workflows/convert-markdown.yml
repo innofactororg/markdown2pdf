@@ -116,11 +116,9 @@ jobs:
             --template "${TEMPLATE}"
 
       - name: Publish PDF
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.OutFile }}
           if-no-files-found: error
           retention-days: ${{ inputs.RetentionDays }}
-          path: |
-            "${{ github.workspace }}/${{ inputs.OutFile }}"
-            "${{ github.workspace }}/${{ inputs.OutFile }}.md"
+          path: ${{ github.workspace }}/${{ inputs.OutFile }}*
