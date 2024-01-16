@@ -77,16 +77,36 @@ jobs:
       - name: Install requirements
         shell: sh
         run: |
-          apk add --no-cache git jq librsvg font-noto-cjk
+          apk add --no-cache git curl jq librsvg font-noto-cjk
           apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community font-carlito
           tlmgr update --self
           tlmgr install lastpage
 
       - name: Build PDF
         shell: sh
+        env:
+          AUTHOR: ${{ inputs.DefaultAuthor }}
+          DESCRIPTION: ${{ inputs.DefaultDescription }}
+          TITLE: ${{ inputs.Title }}
+          SUBTITLE: ${{ inputs.Subtitle }}
+          FOLDER: ${{ inputs.Folder }}
+          FORCE_DEFAULT: ${{ inputs.ForceDefault }}
+          HISTORY: ${{ inputs.HistoryFile }}
+          LIMIT: ${{ inputs.LimitVersionHistory }}
+          ORDER_FILE: ${{ inputs.OrderFile }}
+          OUT_FILE: ${{ inputs.OutFile }}
+          REPLACE_FILE: ${{ inputs.ReplaceFile }}
+          PROJECT: ${{ inputs.Project }}
+          TEMPLATE: ${{ inputs.Template }}
         run: |
           git config --global --add safe.directory '*'
-          tools/mdconvert.sh -a '${{ inputs.DefaultAuthor }}' -d '${{ inputs.DefaultDescription }}' -f '${{ inputs.Folder }}' -force '${{ inputs.ForceDefault }}' -h '${{ inputs.HistoryFile }}' -l ${{ inputs.LimitVersionHistory }} -o '${{ inputs.OrderFile }}' -out '${{ inputs.OutFile }}' -p '${{ inputs.Project }}' -r '${{ inputs.ReplaceFile }}' -s '${{ inputs.Subtitle }}' -t '${{ inputs.Title }}' --template '${{ inputs.Template }}'
+          curl -o mdconvert.sh -sSL https://raw.githubusercontent.com/innofactororg/markdown2pdf/v2.0.2/tools/mdconvert.sh
+          chmod +x ./mdconvert.sh
+          ./mdconvert.sh -a "${AUTHOR}" -d "${DESCRIPTION}" -f "${FOLDER}" \
+            -force "${FORCE_DEFAULT}" -h "${HISTORY}" -l ${LIMIT} \
+            -o "${ORDER_FILE}" -out "${OUT_FILE}" -p "${PROJECT}" \
+            -r "${REPLACE_FILE}" -s "${SUBTITLE}" -t "${TITLE}" \
+            --template "${TEMPLATE}"
 
       - name: Publish PDF
         uses: actions/upload-artifact@v3
