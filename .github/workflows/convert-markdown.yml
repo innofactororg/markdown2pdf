@@ -1,6 +1,5 @@
 ---
 name: 🧳 Convert Markdown
-
 on:
   workflow_call:
     inputs:
@@ -61,6 +60,9 @@ on:
         type: number
         default: 5
 
+env:
+  VERSION: v2.0.0
+
 jobs:
   build:
     name: Convert Markdown
@@ -100,9 +102,14 @@ jobs:
           TEMPLATE: ${{ inputs.Template }}
         run: |
           git config --global --add safe.directory '*'
-          curl -o mdconvert.sh -sSL https://raw.githubusercontent.com/innofactororg/markdown2pdf/v2.0.3/tools/mdconvert.sh
-          chmod +x ./mdconvert.sh
-          ./mdconvert.sh -a "${AUTHOR}" -d "${DESCRIPTION}" -f "${FOLDER}" \
+          server='raw.githubusercontent.com'
+          URL="https://${server}/innofactororg/markdown2pdf/${VERSION}/tools"
+          curl -o ${TEMPLATE}-cover.png -sSL ${URL}/${TEMPLATE}-cover.png
+          curl -o ${TEMPLATE}-logo.png -sSL ${URL}/${TEMPLATE}-logo.png
+          curl -o ${TEMPLATE}.tex -sSL ${URL}/${TEMPLATE}.tex
+          curl -o convert.sh -sSL ${URL}/convert.sh
+          chmod +x ./convert.sh
+          ./convert.sh -a "${AUTHOR}" -d "${DESCRIPTION}" -f "${FOLDER}" \
             -force "${FORCE_DEFAULT}" -h "${HISTORY}" -l ${LIMIT} \
             -o "${ORDER_FILE}" -out "${OUT_FILE}" -p "${PROJECT}" \
             -r "${REPLACE_FILE}" -s "${SUBTITLE}" -t "${TITLE}" \
@@ -114,4 +121,6 @@ jobs:
           name: ${{ inputs.OutFile }}
           if-no-files-found: error
           retention-days: ${{ inputs.RetentionDays }}
-          path: "${{ github.workspace }}/${{ inputs.OutFile }}"
+          path: |
+            "${{ github.workspace }}/${{ inputs.OutFile }}"
+            "${{ github.workspace }}/${{ inputs.OutFile }}.md"

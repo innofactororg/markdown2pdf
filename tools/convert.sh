@@ -82,6 +82,9 @@ get_file_path() {
 }
 get_version_history() {
   if [ -n "${historyFilePath}" ]; then
+    if ! [ -f "${historyFilePath}" ]; then
+      error '' "Unable to find history file ${historyFilePath}" 1
+    fi
     mergeLogs=$(cat -- ${historyFilePath})
   elif [ "${ForceDefault}" = 'true' ]; then
     mergeLogs=$(echo "tag: rel/repo/1.0.0|$currentDate|$DefaultAuthor|$DefaultDescription")
@@ -219,20 +222,39 @@ fi
 replaceFilePath=$(get_file_path "$ReplaceFile" $DocsPath)
 # Get path to template files in the same folder as the script
 templateFilePath=$(get_file_path "${Template}.tex" $scriptPath)
+if ! [ -f "${templateFilePath}" ]; then
+  error '' "Unable to find template file ${templateFilePath}" 1
+fi
 templateCoverFilePath=$(get_file_path "${Template}-cover.png" $scriptPath)
+if ! [ -f "${templateCoverFilePath}" ]; then
+  error '' "Unable to find template cover file ${templateCoverFilePath}" 1
+fi
 templateLogoFilePath=$(get_file_path "${Template}-logo.png" $scriptPath)
+if ! [ -f "${templateLogoFilePath}" ]; then
+  error '' "Unable to find template logo file ${templateLogoFilePath}" 1
+fi
 info 'Get version history'
 versionHistory=$(get_version_history)
 info 'Merge markdown files'
-files=$(cat -- ${orderFilePath} | while read line; do echo "${DocsPath}/${line}"; done)
+files=$(
+  cat -- ${orderFilePath} | while read line; do
+    if ! [ -f "${DocsPath}/${line}" ]; then
+      error '' "Unable to find markdown file ${DocsPath}/${line}" 1
+    fi
+    echo "${DocsPath}/${line}"
+  done
+)
 markdownContent=$(awk 'FNR==1 && NR > 1{print ""}1' $files)
 if [ -n "${ReplaceFile}" ]; then
+  if ! [ -f "${replaceFilePath}" ]; then
+    error '' "Unable to find replace file ${replaceFilePath}" 1
+  fi
   info 'Perform replace in markdown'
   while IFS=$'\t' read -r key value; do
-    markdownContent=$(echo "$markdownContent" | sed -e "s/${key}/${value}/g")
+    markdownContent=$(echo "${markdownContent}" | sed -e "s/${key}/${value}/g")
   done < <(jq -r 'to_entries[] | [.key, .value] | @tsv' $replaceFilePath)
 fi
-authors=$(echo "$versionHistory" | jq '.[].author' | uniq | sed ':a; N; $!ba; s/\n/,/g')
+authors=$(echo "${versionHistory}" | jq '.[].author' | uniq | sed ':a; N; $!ba; s/\n/,/g')
 IFS= read -r -d '' metadataContent <<META_DATA || true
 {
   "author": [
@@ -240,7 +262,7 @@ IFS= read -r -d '' metadataContent <<META_DATA || true
   ],
   "block-headings": true,
   "colorlinks": true,
-  "date": "$currentDate",
+  "date": "${currentDate}",
   "disable-header-and-footer": false,
   "disclaimer": "This document contains business and trade secrets (essential information about Innofactor's business) and is therefore totally confidential. Confidentiality does not apply to pricing information",
   "footer-center": "Page (\\\thepage ) of \\\pageref{LastPage}",
@@ -249,7 +271,7 @@ IFS= read -r -d '' metadataContent <<META_DATA || true
   "listings-disable-line-numbers": false,
   "listings-no-page-break": false,
   "lof": false,
-  "logo": "$templateLogoFilePath",
+  "logo": "${templateLogoFilePath}",
   "lot": false,
   "mainfont": "Carlito",
   "pandoc-latex-environment": {
@@ -259,27 +281,26 @@ IFS= read -r -d '' metadataContent <<META_DATA || true
     "cautionblock": ["caution"],
     "tipblock": ["tip"]
   },
-  "project": "$Project",
-  "subtitle": "$Subtitle",
+  "project": "${Project}",
+  "subtitle": "${Subtitle}",
   "table-use-row-colors": false,
   "tables": true,
-  "title": "$Title",
+  "title": "${Title}",
   "titlepage": true,
   "titlepage-color":"FFFFFF",
   "titlepage-text-color": "5F5F5F",
-  "titlepage-top-cover-image": "$templateCoverFilePath",
+  "titlepage-top-cover-image": "${templateCoverFilePath}",
   "toc": true,
   "toc-own-page": true,
   "toc-title": "Table of Contents",
   "version-history": $versionHistory
 }
 META_DATA
-echo "${metadataContent}" | jq '.' > $DocsPath/metadata.json
-# Should this markdown be an artifact after completion along with metadata.json?
-# echo "${markdownContent}" > $OutFile.md
+echo "${metadataContent}" | jq '.' > "${DocsPath}/metadata.json"
+echo "${markdownContent}" > "${OutFile}.md"
 info "Create ${OutFile} using metadata:"
 echo "${metadataContent}" | jq '.'
-if ! echo "$OutFile" | grep -Eq '\.md$'; then
+if ! echo "${OutFile}" | grep -Eq '\.md$'; then
   # We need to be in the docs path so image paths can be relative
   cd $DocsPath
   echo "${markdownContent}" | pandoc \
@@ -293,7 +314,7 @@ if ! echo "$OutFile" | grep -Eq '\.md$'; then
     --output="${OutFile}"
   cd $currentPath
 else
-  echo "${markdownContent}" > $OutFile
+  echo "${markdownContent}" > "${OutFile}"
 fi
 if [ ! -f $OutFile ]; then
   warning "Unable to create ${OutFile}"
