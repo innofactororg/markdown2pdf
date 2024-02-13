@@ -61,7 +61,7 @@ on:
         default: 5
 
 env:
-  VERSION: v2.0.0
+  VERSION: d76635a9ee3d37c5838a37ec96cc6583032552b9
 
 jobs:
   build:
