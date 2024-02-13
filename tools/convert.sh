@@ -73,9 +73,9 @@ get_file_path() {
   if [ -z "${1}" ]; then
     echo ''
   elif [ -e ${1} ]; then
-    echo $(realpath "${1}")
+    echo $(readlink -f "${1}")
   elif [ -e ${2}/${1} ]; then
-    echo $(realpath ${2}/${1})
+    echo $(readlink -f ${2}/${1})
   else
     echo ''
   fi
@@ -212,7 +212,7 @@ fi
 if ! [ -d "${DocsPath}" ]; then
   error '' "Unable to find folder ${DocsPath}" 1
 fi
-scriptPath=$(dirname -- $(realpath "$0"))
+scriptPath=$(dirname -- $(readlink -f "$0"))
 # Get path to docs files in the same folder as the docs
 historyFilePath=$(get_file_path "$HistoryFile" $DocsPath)
 orderFilePath=$(get_file_path "$OrderFile" $DocsPath)
@@ -238,10 +238,15 @@ versionHistory=$(get_version_history)
 info 'Merge markdown files'
 files=$(
   cat -- ${orderFilePath} | while read line; do
-    if ! [ -f "${DocsPath}/${line}" ]; then
-      error '' "Unable to find markdown file ${DocsPath}/${line}" 1
+    if test -n "${line}"; then
+      if ! [ -f "${DocsPath}/${line}" ]; then
+        error '' "Unable to find markdown file ${DocsPath}/${line}" 1
+      fi
+      mdfile=$(readlink -f -- "${DocsPath}/${line}")
+      mdpath=$(dirname -- $mdfile)
+      sed -i -e "s|\(\[.*\](\)\(.*)\)|\1${mdpath}/\2|g" $mdfile
+      echo "${mdfile}"
     fi
-    echo "${DocsPath}/${line}"
   done
 )
 markdownContent=$(awk 'FNR==1 && NR > 1{print ""}1' $files)
