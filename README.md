@@ -51,8 +51,8 @@ on:
     types: [opened, synchronize]
     branches: [main]
     paths:
-      - 'docs/design/*.md'
-      - 'docs/design/*.order'
+      - "docs/design/*.md"
+      - "docs/design/*.order"
 
 jobs:
   pdf:
