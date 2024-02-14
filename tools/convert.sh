@@ -251,11 +251,13 @@ printf "%s\n" "$(cat -- "${orderFilePath}")" | while read line; do
     mdFile=$(readlink -f -- "${DocsPath}/${line}")
     mdPath=$(dirname -- $mdFile)
     tmpContent=$(printf "%s" "$(sed -e "s|\(\[.*\](\)\(.*)\)|\1${mdPath}/\2|g" "${mdFile}")")
-    info "Found ${#tmpContent} characters in ${mdFile}"
-    if ! test -f "${mdOutFile}"; then
-      printf "${tmpContent}\n" > "${mdOutFile}"
-    else
-      printf "\n${tmpContent}\n" >> "${mdOutFile}"
+    if test -n "${tmpContent}"; then
+      info "Found ${#tmpContent} characters in ${mdFile}"
+      if ! test -f "${mdOutFile}"; then
+        printf "${tmpContent}\n" > "${mdOutFile}"
+      else
+        printf "\n${tmpContent}\n" >> "${mdOutFile}"
+      fi
     fi
   else
     info "Ignore $line"
@@ -319,26 +321,28 @@ IFS= read -r -d '' metadataContent <<META_DATA || true
 }
 META_DATA
 echo "${metadataContent}" | jq '.' > "${DocsPath}/metadata.json"
-info "The markdown contains ${#mdContent} characters"
-info "Create ${OutFile} using metadata:"
-echo "${metadataContent}" | jq '.'
-if ! [ "${OutFile: -3}" = '.md' ]; then
-  # We need to be in the docs path so image paths can be relative
-  cd $DocsPath
-  echo "${mdContent}" | pandoc \
-    --standalone \
-    --listings \
-    --pdf-engine=xelatex \
-    --metadata-file="${DocsPath}/metadata.json" \
-    -f markdown+backtick_code_blocks+pipe_tables+auto_identifiers+yaml_metadata_block+table_captions+footnotes+smart+escaped_line_breaks \
-    --template="${templateFilePath}" \
-    --filter pandoc-latex-environment \
-    --output="${OutFile}"
-  cd $currentPath
-fi
-if [ ! -f $OutFile ]; then
-  warning "Unable to create ${OutFile}"
-else
-  size=$(expr $(stat -c '%s' $OutFile) / 1000)
-  info "Created ${OutFile} using ${size} KB"
+if test -n "${mdContent}"; then
+  info "The markdown contains ${#mdContent} characters"
+  info "Create ${OutFile} using metadata:"
+  echo "${metadataContent}" | jq '.'
+  if ! [ "${OutFile: -3}" = '.md' ]; then
+    # We need to be in the docs path so image paths can be relative
+    cd $DocsPath
+    echo "${mdContent}" | pandoc \
+      --standalone \
+      --listings \
+      --pdf-engine=xelatex \
+      --metadata-file="${DocsPath}/metadata.json" \
+      -f markdown+backtick_code_blocks+pipe_tables+auto_identifiers+yaml_metadata_block+table_captions+footnotes+smart+escaped_line_breaks \
+      --template="${templateFilePath}" \
+      --filter pandoc-latex-environment \
+      --output="${OutFile}"
+    cd $currentPath
+  fi
+  if [ ! -f $OutFile ]; then
+    warning "Unable to create ${OutFile}"
+  else
+    size=$(expr $(stat -c '%s' $OutFile) / 1000)
+    info "Created ${OutFile} using ${size} KB"
+  fi
 fi
