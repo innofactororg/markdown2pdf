@@ -235,7 +235,6 @@ if ! [ -f "${templateLogoFilePath}" ]; then
 fi
 info 'Get version history'
 versionHistory=$(get_version_history)
-info 'Merge markdown files'
 newLine='
 '
 if [ "${OutFile: -3}" = '.md' ]; then
@@ -243,7 +242,8 @@ if [ "${OutFile: -3}" = '.md' ]; then
 else
   mdOutFile="${OutFile}.md"
 fi
-cat -- ${orderFilePath} | while read line; do
+info "Read ${orderFilePath} to merge markdown files"
+cat -- "${orderFilePath}" | while read line; do
   if test -n "${line}" && ! [ "${line:0:1}" = '#' ]; then
     if ! test -f "${DocsPath}/${line}"; then
       error '' "Unable to find markdown file ${DocsPath}/${line}" 1
@@ -320,12 +320,12 @@ IFS= read -r -d '' metadataContent <<META_DATA || true
 }
 META_DATA
 echo "${metadataContent}" | jq '.' > "${DocsPath}/metadata.json"
+info "The markdown contains ${#mdContent} characters"
 info "Create ${OutFile} using metadata:"
 echo "${metadataContent}" | jq '.'
 if ! [ "${OutFile: -3}" = '.md' ]; then
   # We need to be in the docs path so image paths can be relative
   cd $DocsPath
-  info "The markdown contains ${#mdContent} characters"
   echo "${mdContent}" | pandoc \
     --standalone \
     --listings \
