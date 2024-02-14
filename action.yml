@@ -81,7 +81,7 @@ runs:
   using: composite
   steps:
     - name: Add tools to system path
-      shell: bash
+      shell: sh
       run: |
         echo "::group::tools_path"
         echo "${GITHUB_ACTION_PATH}"
