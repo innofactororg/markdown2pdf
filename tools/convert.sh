@@ -22,7 +22,7 @@ error() {
   if [ "$line" != "" ]; then
     line_message=" on or near line ${line}"
   fi
-  if [[ -n "$message" ]]; then
+  if test -n "${message}"; then
     message="${message} (exit code ${code})"
   else
     message="Unspecified (exit code ${code})"
@@ -86,13 +86,13 @@ get_version_history() {
       error '' "Unable to find history file ${historyFilePath}" 1
     fi
     mergeLogs=$(cat -- ${historyFilePath})
-  elif [ "${ForceDefault}" = 'true' ]; then
-    mergeLogs=$(echo "tag: rel/repo/1.0.0|$currentDate|$DefaultAuthor|$DefaultDescription")
+  elif [ "${SkipGitCommitHistory}" = 'true' ]; then
+    mergeLogs=$(echo "tag: rel/repo/1.0.0|$currentDate|$MainAuthor|$FirstChangeDescription")
   else
-    mergeLogs=$(git --no-pager log -$LimitVersionHistory --date-order --date=format:'%b %e, %Y' --no-merges --oneline --pretty=format:'%D|%ad|%an|%s' -- $DocsPath)
+    mergeLogs=$(git --no-pager log -$GitLogLimit --date-order --date=format:'%b %e, %Y' --no-merges --oneline --pretty=format:'%D|%ad|%an|%s' -- $DocsPath)
   fi
   if [ -z "$mergeLogs" ]; then
-    mergeLogs=$(echo "tag: rel/repo/1.0.0|$currentDate|$DefaultAuthor|$DefaultDescription")
+    mergeLogs=$(echo "tag: rel/repo/1.0.0|$currentDate|$MainAuthor|$FirstChangeDescription")
   fi
   lineCount=$(echo "$mergeLogs" | wc -l)
   historyJson='[]'
@@ -119,11 +119,11 @@ process_params() {
     local arg="$1"
     case "$arg" in
       -a|--author)
-        DefaultAuthor=$(test_arg true 'Innofactor' "$@")
+        MainAuthor=$(test_arg true 'Innofactor' "$@")
         shift 2
         ;;
       -d|--description)
-        DefaultDescription=$(test_arg true 'Initial draft' "$@")
+        FirstChangeDescription=$(test_arg true 'Initial draft' "$@")
         shift 2
         ;;
       -f|--folder)
@@ -133,9 +133,9 @@ process_params() {
       -force|--force-default)
         shift
         if [ $# -eq 0 ] || echo "${1}" | grep -Eq '^-.*'; then
-          ForceDefault='true'
+          SkipGitCommitHistory='true'
         else
-          ForceDefault=$(test_true_false "${1}")
+          SkipGitCommitHistory=$(test_true_false "${1}")
           shift
         fi
         ;;
@@ -143,8 +143,8 @@ process_params() {
         HistoryFile=$(test_arg true '' "$@")
         shift 2
         ;;
-      -l|--limitversionhistory)
-        LimitVersionHistory=$(test_arg true 15 "$@")
+      -l|--gitloglimit)
+        GitLogLimit=$(test_arg true 15 "$@")
         shift 2
         ;;
       -o|--orderfile)
@@ -182,12 +182,12 @@ process_params() {
     esac
   done
 }
-DefaultAuthor='Innofactor'
-DefaultDescription='Initial draft'
+MainAuthor='Innofactor'
+FirstChangeDescription='Initial draft'
 DocsPath='docs'
-ForceDefault='false'
+SkipGitCommitHistory='false'
 HistoryFile=''
-LimitVersionHistory=15
+GitLogLimit=15
 OrderFile='document.order'
 OutFile='document.pdf'
 Project=''
@@ -235,29 +235,51 @@ if ! [ -f "${templateLogoFilePath}" ]; then
 fi
 info 'Get version history'
 versionHistory=$(get_version_history)
-info 'Merge markdown files'
-files=$(
-  cat -- ${orderFilePath} | while read line; do
-    if test -n "${line}"; then
-      if ! [ -f "${DocsPath}/${line}" ]; then
-        error '' "Unable to find markdown file ${DocsPath}/${line}" 1
-      fi
-      mdfile=$(readlink -f -- "${DocsPath}/${line}")
-      mdpath=$(dirname -- $mdfile)
-      sed -i -e "s|\(\[.*\](\)\(.*)\)|\1${mdpath}/\2|g" $mdfile
-      echo "${mdfile}"
+newLine='
+'
+if [ "${OutFile: -3}" = '.md' ]; then
+  mdOutFile="${OutFile}"
+else
+  mdOutFile="${OutFile}.md"
+fi
+info "Merge markdown files in ${orderFilePath}"
+printf '%s\n' "$(cat -- "${orderFilePath}")" | while read line; do
+  if test -n "${line}" && ! [ "${line:0:1}" = '#' ]; then
+    if ! test -f "${DocsPath}/${line}"; then
+      error '' "Unable to find markdown file ${DocsPath}/${line}" 1
     fi
-  done
-)
-markdownContent=$(awk 'FNR==1 && NR > 1{print ""}1' $files)
+    mdFile=$(readlink -f -- "${DocsPath}/${line}")
+    mdPath=$(dirname -- $mdFile)
+    tmpContent=$(
+      printf '%s' "$(sed -e "s|\(\[.*\](\)\(\../\)\(.*)\)|\1${mdPath}/\2\3|g" "${mdFile}" | sed -e "s|\(\[.*\](\)\(\./\)\(.*)\)|\1${mdPath}/\3|g" | sed -e "s|\(\[.*\](\)\(asset\)\(.*)\)|\1${mdPath}/\2\3|g" | sed -e "s|\(\[.*\](\)\(attach\)\(.*)\)|\1${mdPath}/\2\3|g" | sed -e "s|\(\[.*\](\)\(image\)\(.*)\)|\1${mdPath}/\2\3|g" | sed -e "s|\(\[.*\](\)\(\.\)\(.*)\)|\1${mdPath}/\2\3|g")"
+    )
+    if test -n "${tmpContent}"; then
+      info "Found ${#tmpContent} characters in ${mdFile}"
+      if ! test -f "${mdOutFile}"; then
+        printf '%s\n' "${tmpContent}" > "${mdOutFile}"
+      else
+        printf '\n%s\n' "${tmpContent}" >> "${mdOutFile}"
+      fi
+    fi
+  else
+    info "Ignore $line"
+  fi
+done
+info 'Done merging markdown files'
+if ! test -f "${mdOutFile}"; then
+  warning 'Unable to merge markdown files, no content found!'
+  exit 1
+fi
+mdContent=$(cat "${mdOutFile}")
 if [ -n "${ReplaceFile}" ]; then
   if ! [ -f "${replaceFilePath}" ]; then
     error '' "Unable to find replace file ${replaceFilePath}" 1
   fi
   info 'Perform replace in markdown'
   while IFS=$'\t' read -r key value; do
-    markdownContent=$(echo "${markdownContent}" | sed -e "s/${key}/${value}/g")
+    mdContent=$(echo "${mdContent}" | sed -e "s/${key}/${value}/g")
   done < <(jq -r 'to_entries[] | [.key, .value] | @tsv' $replaceFilePath)
+  echo "${mdContent}" > "${mdOutFile}"
 fi
 authors=$(echo "${versionHistory}" | jq '.[].author' | uniq | sed ':a; N; $!ba; s/\n/,/g')
 IFS= read -r -d '' metadataContent <<META_DATA || true
@@ -302,28 +324,28 @@ IFS= read -r -d '' metadataContent <<META_DATA || true
 }
 META_DATA
 echo "${metadataContent}" | jq '.' > "${DocsPath}/metadata.json"
-echo "${markdownContent}" > "${OutFile}.md"
-info "Create ${OutFile} using metadata:"
-echo "${metadataContent}" | jq '.'
-if ! echo "${OutFile}" | grep -Eq '\.md$'; then
-  # We need to be in the docs path so image paths can be relative
-  cd $DocsPath
-  echo "${markdownContent}" | pandoc \
-    --standalone \
-    --listings \
-    --pdf-engine=xelatex \
-    --metadata-file="${DocsPath}/metadata.json" \
-    -f markdown+backtick_code_blocks+pipe_tables+auto_identifiers+yaml_metadata_block+table_captions+footnotes+smart+escaped_line_breaks \
-    --template="${templateFilePath}" \
-    --filter pandoc-latex-environment \
-    --output="${OutFile}"
-  cd $currentPath
-else
-  echo "${markdownContent}" > "${OutFile}"
-fi
-if [ ! -f $OutFile ]; then
-  warning "Unable to create ${OutFile}"
-else
-  size=$(expr $(stat -c '%s' $OutFile) / 1000)
-  info "Created ${OutFile} using ${size} KB"
+if test -n "${mdContent}"; then
+  info "The markdown contains ${#mdContent} characters"
+  info "Create ${OutFile} using metadata:"
+  echo "${metadataContent}" | jq '.'
+  if ! [ "${OutFile: -3}" = '.md' ]; then
+    # We need to be in the docs path so image paths can be relative
+    cd $DocsPath
+    echo "${mdContent}" | pandoc \
+      --standalone \
+      --listings \
+      --pdf-engine=xelatex \
+      --metadata-file="${DocsPath}/metadata.json" \
+      -f markdown+backtick_code_blocks+pipe_tables+auto_identifiers+yaml_metadata_block+table_captions+footnotes+smart+escaped_line_breaks \
+      --template="${templateFilePath}" \
+      --filter pandoc-latex-environment \
+      --output="${OutFile}"
+    cd $currentPath
+  fi
+  if [ ! -f $OutFile ]; then
+    warning "Unable to create ${OutFile}"
+  else
+    size=$(expr $(stat -c '%s' $OutFile) / 1000)
+    info "Created ${OutFile} using ${size} KB"
+  fi
 fi

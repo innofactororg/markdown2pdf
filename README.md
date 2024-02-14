@@ -6,9 +6,10 @@ It use the following logic:
 
 1. Get version history:
    1. If a **HistoryFile** exist; use the content of that file.
-   1. Or, if **ForceDefault** is set to `true`; use the value of **DefaultAuthor** and **DefaultDescription**.
-   1. Or, use git commit history. Limit the number of items to the value of **LimitVersionHistory**.
+   1. Or, if **SkipGitCommitHistory** is set to `true` or a commit history don't exist; use the value of **MainAuthor** and **FirstChangeDescription**.
+   1. Or, use git commit history. Limit the number of items to the value of **GitLogLimit**.
 1. Merge the markdown files listed in the OrderFile to one markdown file.
+1. Replace markdown links that have relative path with absolute path.
 1. If a **ReplaceFile** exist; replace in the markdown each string that match the key from **ReplaceFile**, with the matching value.
 1. Build and display metadata for the pandoc converter.
 1. Convert the markdown using pandoc and save it as an artifact to the job.
@@ -33,6 +34,7 @@ This text is in a tip admonition block.
 
 The following are known issues:
 
+- Relative paths should start with `./` to ensure it can be replaced with absolute path before converting it to PDF.
 - Markdown table columns can overlap in the PDF if the table is to wide, making text unreadable. To work around this:
   - limit the text in the table. Typically it should be less than 80 characters wide.
   - split the table up.
@@ -57,31 +59,53 @@ on:
 jobs:
   pdf:
     name: Build PDF
-    uses: innofactororg/markdown2pdf/.github/workflows/convert-markdown.yml@v2
+    uses: innofactororg/markdown2pdf/.github/workflows/convert-markdown.yml@v3beta1
     secrets: inherit
     with:
-      # The document title
-      # Default: Innofactor
-      Title: Design
+      # The first change description.
+      #
+      # This value will be used if a HistoryFile
+      # is not specified and a git commit comment
+      # is not available.
+      #
+      # Default: Initial draft
+      FirstChangeDescription: Initial draft
 
-      # The document subtitle
-      # Default: DESIGN DOCUMENT
-      Subtitle: Document
-
-      # The project ID or name
-      # Default: ''
-      Project: 12345678
-
-      # The repository folder where markdown files exist
+      # The repository folder where the order file exist.
       # Default: docs
       Folder: docs/design
 
-      # The template name. Must be: designdoc
-      # Default: designdoc
-      Template: designdoc
+      # Maximum entries to get from Git Log for version history.
+      # Default: 15
+      GitLogLimit: 15
 
-      # The name of the .order file that specify what order the markdown files must be in the converted PDF
-      # This is a text file with the name of each markdown file, one for each line, in the correct order
+      # The name of the history file.
+      #
+      # This is a file with the version history content.
+      #
+      # The file must contain the following structure:
+      # Version|Date|Author|Description
+      #
+      # Example content for a history.txt file:
+      # 1|Oct 26, 2023|Jane Doe|Initial draft
+      # 2|Oct 28, 2023|John Doe|Added detailed design
+      #
+      # Default: ''
+      HistoryFile: history.txt
+
+      # The main author of the PDF content.
+      #
+      # This value will be used if a HistoryFile
+      # is not specified and author can't be retrieved
+      # from git commits.
+      #
+      # Default: Innofactor
+      MainAuthor: Innofactor
+
+      # The name of the .order file.
+      #
+      # This is a text file with the name of each markdown file,
+      # one for each line, in the correct order.
       #
       # Example content for a document.order file:
       # summary.md
@@ -91,19 +115,42 @@ jobs:
       # Default: document.order
       OrderFile: document.order
 
-      # The name of the change file that specify the version history content
-      # The file must contain the following structure:
-      # Version|Date|Author|Description
+      # The name of the output file.
       #
-      # Example content for a history.txt file:
-      # 1|Oct 26, 2023|Jane Doe|Initial draft
-      # 2|Oct 28, 2023|John Doe|Added detailed design
+      # This file will be uploaded to the job artifacts.
       #
-      # Default:
-      HistoryFile: history.txt
+      # Default: document.pdf
+      OutFile: Design.pdf
 
-      # The name of the replace file that has a JSON structure with a object of
-      # key and value strings that will be replaced in the markdown file before conversion
+      # The project ID or name.
+      # Default: ''
+      Project: 12345678
+
+      # Skip using git commit history.
+      #
+      # When set to true, the change history will not be
+      # retrieved from the git commit log.
+      #
+      # Default: false
+      SkipGitCommitHistory: false
+
+      # The document subtitle.
+      # Default: ''
+      Subtitle: DESIGN DOCUMENT
+
+      # The template name. Must be: designdoc.
+      # Default: designdoc
+      Template: designdoc
+
+      # The document title.
+      # Required
+      Title: Design
+
+      # The name of the replace file.
+      #
+      # This is a JSON file with key and value strings.
+      # Each key will be searched for in the markdown files and
+      # replaced with the value before conversion to PDF.
       #
       # Example content for a replace.json file:
       # {
@@ -114,27 +161,11 @@ jobs:
       # Default:
       ReplaceFile: replace.json
 
-      # The name of the output file that will be uploaded to the job artifacts
-      # Default: document.pdf
-      OutFile: Design.pdf
-
-      # The default value to use for author of the PDF content. When specified, this value will be used if authors can't be retrieved from the git commits
-      # Default: Innofactor
-      DefaultAuthor: Innofactor
-
-      # The description of the first line of document change history. When specified, this value will be used when no git comment can be retrieved from the git commits
-      # Default: Initial draft
-      DefaultDescription: Initial draft
-
-      # Limit the version history table to this number of entries
-      # Default: 15
-      LimitVersionHistory: 15
-
-      # Force to use the DefaultAuthor and DefaultDescription instead of using information for git commits
-      # Default: false
-      ForceDefault: false
-
-      # Number of days to retains the output PDF file in the job artifacts.
+      # Number of days to retain job artifacts.
       # Default: 5 days
       RetentionDays: 5
 ```
+
+## License
+
+The code and documentation in this project are released under the [BSD 3-Clause License](LICENSE).
