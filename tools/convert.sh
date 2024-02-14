@@ -22,7 +22,7 @@ error() {
   if [ "$line" != "" ]; then
     line_message=" on or near line ${line}"
   fi
-  if [[ -n "$message" ]]; then
+  if test -n "${message}"; then
     message="${message} (exit code ${code})"
   else
     message="Unspecified (exit code ${code})"
@@ -236,30 +236,46 @@ fi
 info 'Get version history'
 versionHistory=$(get_version_history)
 info 'Merge markdown files'
-files=$(
-  cat -- ${orderFilePath} | while read line; do
-    if test -n "${line}" && ! [[ "${line}" == '#'* ]]; then
-      if ! test -f "${DocsPath}/${line}"; then
-        error '' "Unable to find markdown file ${DocsPath}/${line}" 1
-      fi
-      mdfile=$(readlink -f -- "${DocsPath}/${line}")
-      mdpath=$(dirname -- $mdfile)
-      sed -i -e "s|\(\[.*\](\)\(.*)\)|\1${mdpath}/\2|g" $mdfile
-      echo "${mdfile}"
+newLine='
+'
+if [ "${OutFile: -3}" = '.md' ]; then
+  mdOutFile="${OutFile}"
+else
+  mdOutFile="${OutFile}.md"
+fi
+cat -- ${orderFilePath} | while read line; do
+  if test -n "${line}" && ! [ "${line:0:1}" = '#' ]; then
+    if ! test -f "${DocsPath}/${line}"; then
+      error '' "Unable to find markdown file ${DocsPath}/${line}" 1
     fi
-  done
-)
-echo 'Markdown files to convert:'
-echo "${files}"
-markdownContent=$(awk 'FNR==1 && NR > 1{print ""}1' $files)
+    mdFile=$(readlink -f -- "${DocsPath}/${line}")
+    info "Read ${mdFile}"
+    mdPath=$(dirname -- $mdFile)
+    tmpContent=$(printf "%s" "$(sed -e "s|\(\[.*\](\)\(.*)\)|\1${mdPath}/\2|g" "${mdFile}")")
+    info "Found ${#tmpContent} characters"
+    if ! test -f "${mdOutFile}"; then
+      printf "${tmpContent}\n" > "${mdOutFile}"
+    else
+      printf "\n${tmpContent}\n" >> "${mdOutFile}"
+    fi
+  else
+    info "Ignore $line"
+  fi
+done
+if ! test -f "${mdOutFile}"; then
+  warning 'Unable to merge markdown files, no content found!'
+  exit 1
+fi
+mdContent=$(cat "${mdOutFile}")
 if [ -n "${ReplaceFile}" ]; then
   if ! [ -f "${replaceFilePath}" ]; then
     error '' "Unable to find replace file ${replaceFilePath}" 1
   fi
   info 'Perform replace in markdown'
   while IFS=$'\t' read -r key value; do
-    markdownContent=$(echo "${markdownContent}" | sed -e "s/${key}/${value}/g")
+    mdContent=$(echo "${mdContent}" | sed -e "s/${key}/${value}/g")
   done < <(jq -r 'to_entries[] | [.key, .value] | @tsv' $replaceFilePath)
+  echo "${mdContent}" > "${mdOutFile}"
 fi
 authors=$(echo "${versionHistory}" | jq '.[].author' | uniq | sed ':a; N; $!ba; s/\n/,/g')
 IFS= read -r -d '' metadataContent <<META_DATA || true
@@ -304,13 +320,13 @@ IFS= read -r -d '' metadataContent <<META_DATA || true
 }
 META_DATA
 echo "${metadataContent}" | jq '.' > "${DocsPath}/metadata.json"
-echo "${markdownContent}" > "${OutFile}.md"
 info "Create ${OutFile} using metadata:"
 echo "${metadataContent}" | jq '.'
-if ! echo "${OutFile}" | grep -Eq '\.md$'; then
+if ! [ "${OutFile: -3}" = '.md' ]; then
   # We need to be in the docs path so image paths can be relative
   cd $DocsPath
-  echo "${markdownContent}" | pandoc \
+  info "The markdown contains ${#mdContent} characters"
+  echo "${mdContent}" | pandoc \
     --standalone \
     --listings \
     --pdf-engine=xelatex \
@@ -320,8 +336,6 @@ if ! echo "${OutFile}" | grep -Eq '\.md$'; then
     --filter pandoc-latex-environment \
     --output="${OutFile}"
   cd $currentPath
-else
-  echo "${markdownContent}" > "${OutFile}"
 fi
 if [ ! -f $OutFile ]; then
   warning "Unable to create ${OutFile}"
