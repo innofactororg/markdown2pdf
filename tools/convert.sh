@@ -242,17 +242,16 @@ if [ "${OutFile: -3}" = '.md' ]; then
 else
   mdOutFile="${OutFile}.md"
 fi
-info "Read ${orderFilePath} to merge markdown files"
-cat -- "${orderFilePath}" | while read line; do
+info "Merge markdown files in ${orderFilePath}"
+printf "%s\n" "$(cat -- "${orderFilePath}")" | while read line; do
   if test -n "${line}" && ! [ "${line:0:1}" = '#' ]; then
     if ! test -f "${DocsPath}/${line}"; then
       error '' "Unable to find markdown file ${DocsPath}/${line}" 1
     fi
     mdFile=$(readlink -f -- "${DocsPath}/${line}")
-    info "Read ${mdFile}"
     mdPath=$(dirname -- $mdFile)
     tmpContent=$(printf "%s" "$(sed -e "s|\(\[.*\](\)\(.*)\)|\1${mdPath}/\2|g" "${mdFile}")")
-    info "Found ${#tmpContent} characters"
+    info "Found ${#tmpContent} characters in ${mdFile}"
     if ! test -f "${mdOutFile}"; then
       printf "${tmpContent}\n" > "${mdOutFile}"
     else
