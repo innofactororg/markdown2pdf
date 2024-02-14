@@ -1,6 +1,6 @@
 # Markdown to PDF converter
 
-This reusable workflow can be used to publish PDF from Markdown using a predefined latex template.
+This composite action can be used to publish PDF from Markdown using a predefined latex template.
 
 It use the following logic:
 
@@ -56,114 +56,127 @@ on:
       - "docs/design/*.md"
       - "docs/design/*.order"
 
+permissions: {}
+
 jobs:
   pdf:
     name: Build PDF
-    uses: innofactororg/markdown2pdf/.github/workflows/convert-markdown.yml@v3beta1
-    secrets: inherit
-    with:
-      # The first change description.
-      #
-      # This value will be used if a HistoryFile
-      # is not specified and a git commit comment
-      # is not available.
-      #
-      # Default: Initial draft
-      FirstChangeDescription: Initial draft
+    permissions:
+      contents: read # for checkout
+    runs-on: ubuntu-22.04
+    container:
+      image: pandoc/extra:edge-alpine
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      # The repository folder where the order file exist.
-      # Default: docs
-      Folder: docs/design
+      - name: Build PDF
+        uses: innofactororg/markdown2pdf@v3
+        with:
+          # The first change description.
+          #
+          # This value will be used if a HistoryFile
+          # is not specified and a git commit comment
+          # is not available.
+          #
+          # Default: Initial draft
+          FirstChangeDescription: Initial draft
 
-      # Maximum entries to get from Git Log for version history.
-      # Default: 15
-      GitLogLimit: 15
+          # The repository folder where the order file exist.
+          # Default: docs
+          Folder: docs/design
 
-      # The name of the history file.
-      #
-      # This is a file with the version history content.
-      #
-      # The file must contain the following structure:
-      # Version|Date|Author|Description
-      #
-      # Example content for a history.txt file:
-      # 1|Oct 26, 2023|Jane Doe|Initial draft
-      # 2|Oct 28, 2023|John Doe|Added detailed design
-      #
-      # Default: ''
-      HistoryFile: history.txt
+          # Maximum entries to get from Git Log for version history.
+          # Default: 15
+          GitLogLimit: 15
 
-      # The main author of the PDF content.
-      #
-      # This value will be used if a HistoryFile
-      # is not specified and author can't be retrieved
-      # from git commits.
-      #
-      # Default: Innofactor
-      MainAuthor: Innofactor
+          # The name of the history file.
+          #
+          # This is a file with the version history content.
+          #
+          # The file must contain the following structure:
+          # Version|Date|Author|Description
+          #
+          # Example content for a history.txt file:
+          # 1|Oct 26, 2023|Jane Doe|Initial draft
+          # 2|Oct 28, 2023|John Doe|Added detailed design
+          #
+          # Default: ''
+          HistoryFile: history.txt
 
-      # The name of the .order file.
-      #
-      # This is a text file with the name of each markdown file,
-      # one for each line, in the correct order.
-      #
-      # Example content for a document.order file:
-      # summary.md
-      # details.md
-      # faq.md
-      #
-      # Default: document.order
-      OrderFile: document.order
+          # The main author of the PDF content.
+          #
+          # This value will be used if a HistoryFile
+          # is not specified and author can't be retrieved
+          # from git commits.
+          #
+          # Default: Innofactor
+          MainAuthor: Innofactor
 
-      # The name of the output file.
-      #
-      # This file will be uploaded to the job artifacts.
-      #
-      # Default: document.pdf
-      OutFile: Design.pdf
+          # The name of the .order file.
+          #
+          # This is a text file with the name of each markdown file,
+          # one for each line, in the correct order.
+          #
+          # Example content for a document.order file:
+          # summary.md
+          # details.md
+          # faq.md
+          #
+          # Default: document.order
+          OrderFile: document.order
 
-      # The project ID or name.
-      # Default: ''
-      Project: 12345678
+          # The name of the output file.
+          #
+          # This file will be uploaded to the job artifacts.
+          #
+          # Default: document.pdf
+          OutFile: Design.pdf
 
-      # Skip using git commit history.
-      #
-      # When set to true, the change history will not be
-      # retrieved from the git commit log.
-      #
-      # Default: false
-      SkipGitCommitHistory: false
+          # The project ID or name.
+          # Default: ''
+          Project: 12345678
 
-      # The document subtitle.
-      # Default: ''
-      Subtitle: DESIGN DOCUMENT
+          # Skip using git commit history.
+          #
+          # When set to true, the change history will not be
+          # retrieved from the git commit log.
+          #
+          # Default: false
+          SkipGitCommitHistory: false
 
-      # The template name. Must be: designdoc.
-      # Default: designdoc
-      Template: designdoc
+          # The document subtitle.
+          # Default: ''
+          Subtitle: DESIGN DOCUMENT
 
-      # The document title.
-      # Required
-      Title: Design
+          # The template name. Must be: designdoc.
+          # Default: designdoc
+          Template: designdoc
 
-      # The name of the replace file.
-      #
-      # This is a JSON file with key and value strings.
-      # Each key will be searched for in the markdown files and
-      # replaced with the value before conversion to PDF.
-      #
-      # Example content for a replace.json file:
-      # {
-      #   "{data center name}": "WE1",
-      #   "{organization name}": "contoso"
-      # }
-      #
-      # Default:
-      ReplaceFile: replace.json
+          # The document title.
+          # Required
+          Title: Design
 
-      # Number of days to retain job artifacts.
-      # Default: 5 days
-      RetentionDays: 5
+          # The name of the replace file.
+          #
+          # This is a JSON file with key and value strings.
+          # Each key will be searched for in the markdown files and
+          # replaced with the value before conversion to PDF.
+          #
+          # Example content for a replace.json file:
+          # {
+          #   "{data center name}": "WE1",
+          #   "{organization name}": "contoso"
+          # }
+          #
+          # Default:
+          ReplaceFile: replace.json
+
+          # Number of days to retain job artifacts.
+          # Default: 5 days
+          RetentionDays: 5
 ```
 
 ## License
