@@ -5,8 +5,8 @@ name: Build PDF
 author: Innofactor Plc
 description: Convert markdown files to a PDF file.
 branding:
-  icon: eye
-  color: green
+  icon: layout
+  color: purple
 inputs:
   FirstChangeDescription:
     description: "The first change description."

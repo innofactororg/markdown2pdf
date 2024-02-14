@@ -250,7 +250,9 @@ printf '%s\n' "$(cat -- "${orderFilePath}")" | while read line; do
     fi
     mdFile=$(readlink -f -- "${DocsPath}/${line}")
     mdPath=$(dirname -- $mdFile)
-    tmpContent=$(printf '%s' "$(sed -e "s|\(\[.*\](\)\(.*)\)|\1${mdPath}/\2|g" "${mdFile}")")
+    tmpContent=$(
+      printf '%s' "$(sed -e "s|\(\[.*\](\)\(\../\)\(.*)\)|\1${mdPath}/\2\3|g" "${mdFile}" | sed -e "s|\(\[.*\](\)\(\./\)\(.*)\)|\1${mdPath}/\3|g" | sed -e "s|\(\[.*\](\)\(asset\)\(.*)\)|\1${mdPath}/\2\3|g" | sed -e "s|\(\[.*\](\)\(attach\)\(.*)\)|\1${mdPath}/\2\3|g" | sed -e "s|\(\[.*\](\)\(image\)\(.*)\)|\1${mdPath}/\2\3|g" | sed -e "s|\(\[.*\](\)\(\.\)\(.*)\)|\1${mdPath}/\2\3|g")"
+    )
     if test -n "${tmpContent}"; then
       info "Found ${#tmpContent} characters in ${mdFile}"
       if ! test -f "${mdOutFile}"; then
@@ -263,7 +265,7 @@ printf '%s\n' "$(cat -- "${orderFilePath}")" | while read line; do
     info "Ignore $line"
   fi
 done
-info 'Done merging narkdown files'
+info 'Done merging markdown files'
 if ! test -f "${mdOutFile}"; then
   warning 'Unable to merge markdown files, no content found!'
   exit 1

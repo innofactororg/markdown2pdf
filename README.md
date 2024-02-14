@@ -6,9 +6,10 @@ It use the following logic:
 
 1. Get version history:
    1. If a **HistoryFile** exist; use the content of that file.
-   1. Or, if **SkipGitCommitHistory** is set to `true`; use the value of **MainAuthor** and **FirstChangeDescription**.
+   1. Or, if **SkipGitCommitHistory** is set to `true` or a commit history don't exist; use the value of **MainAuthor** and **FirstChangeDescription**.
    1. Or, use git commit history. Limit the number of items to the value of **GitLogLimit**.
 1. Merge the markdown files listed in the OrderFile to one markdown file.
+1. Replace markdown links that have relative path with absolute path.
 1. If a **ReplaceFile** exist; replace in the markdown each string that match the key from **ReplaceFile**, with the matching value.
 1. Build and display metadata for the pandoc converter.
 1. Convert the markdown using pandoc and save it as an artifact to the job.
@@ -33,6 +34,7 @@ This text is in a tip admonition block.
 
 The following are known issues:
 
+- Relative paths should start with `./` to ensure it can be replaced with absolute path before converting it to PDF.
 - Markdown table columns can overlap in the PDF if the table is to wide, making text unreadable. To work around this:
   - limit the text in the table. Typically it should be less than 80 characters wide.
   - split the table up.
@@ -73,34 +75,9 @@ jobs:
       # Default: docs
       Folder: docs/design
 
-      # The document title.
-      # Required
-      Title: Design
-
-      # The document subtitle.
-      # Default: ''
-      Subtitle: DESIGN DOCUMENT
-
-      # The project ID or name.
-      # Default: ''
-      Project: 12345678
-
-      # The template name. Must be: designdoc.
-      # Default: designdoc
-      Template: designdoc
-
-      # The name of the .order file.
-      #
-      # This is a text file with the name of each markdown file,
-      # one for each line, in the correct order.
-      #
-      # Example content for a document.order file:
-      # summary.md
-      # details.md
-      # faq.md
-      #
-      # Default: document.order
-      OrderFile: document.order
+      # Maximum entries to get from Git Log for version history.
+      # Default: 15
+      GitLogLimit: 15
 
       # The name of the history file.
       #
@@ -116,6 +93,59 @@ jobs:
       # Default: ''
       HistoryFile: history.txt
 
+      # The main author of the PDF content.
+      #
+      # This value will be used if a HistoryFile
+      # is not specified and author can't be retrieved
+      # from git commits.
+      #
+      # Default: Innofactor
+      MainAuthor: Innofactor
+
+      # The name of the .order file.
+      #
+      # This is a text file with the name of each markdown file,
+      # one for each line, in the correct order.
+      #
+      # Example content for a document.order file:
+      # summary.md
+      # details.md
+      # faq.md
+      #
+      # Default: document.order
+      OrderFile: document.order
+
+      # The name of the output file.
+      #
+      # This file will be uploaded to the job artifacts.
+      #
+      # Default: document.pdf
+      OutFile: Design.pdf
+
+      # The project ID or name.
+      # Default: ''
+      Project: 12345678
+
+      # Skip using git commit history.
+      #
+      # When set to true, the change history will not be
+      # retrieved from the git commit log.
+      #
+      # Default: false
+      SkipGitCommitHistory: false
+
+      # The document subtitle.
+      # Default: ''
+      Subtitle: DESIGN DOCUMENT
+
+      # The template name. Must be: designdoc.
+      # Default: designdoc
+      Template: designdoc
+
+      # The document title.
+      # Required
+      Title: Design
+
       # The name of the replace file.
       #
       # This is a JSON file with key and value strings.
@@ -130,34 +160,6 @@ jobs:
       #
       # Default:
       ReplaceFile: replace.json
-
-      # The name of the output file.
-      #
-      # This file will be uploaded to the job artifacts.
-      #
-      # Default: document.pdf
-      OutFile: Design.pdf
-
-      # The main author of the PDF content.
-      #
-      # This value will be used if a HistoryFile
-      # is not specified and author can't be retrieved
-      # from git commits.
-      #
-      # Default: Innofactor
-      MainAuthor: Innofactor
-
-      # Maximum entries to get from Git Log for version history.
-      # Default: 15
-      GitLogLimit: 15
-
-      # Skip using git commit history.
-      #
-      # When set to true, the change history will not be
-      # retrieved from the git commit log.
-      #
-      # Default: false
-      SkipGitCommitHistory: false
 
       # Number of days to retain job artifacts.
       # Default: 5 days
