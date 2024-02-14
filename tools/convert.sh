@@ -238,8 +238,8 @@ versionHistory=$(get_version_history)
 info 'Merge markdown files'
 files=$(
   cat -- ${orderFilePath} | while read line; do
-    if test -n "${line}"; then
-      if ! [ -f "${DocsPath}/${line}" ]; then
+    if test -n "${line}" && ! [[ "${line}" == '#'* ]]; then
+      if ! test -f "${DocsPath}/${line}"; then
         error '' "Unable to find markdown file ${DocsPath}/${line}" 1
       fi
       mdfile=$(readlink -f -- "${DocsPath}/${line}")
@@ -249,6 +249,8 @@ files=$(
     fi
   done
 )
+echo 'Markdown files to convert:'
+echo "${files}"
 markdownContent=$(awk 'FNR==1 && NR > 1{print ""}1' $files)
 if [ -n "${ReplaceFile}" ]; then
   if ! [ -f "${replaceFilePath}" ]; then
