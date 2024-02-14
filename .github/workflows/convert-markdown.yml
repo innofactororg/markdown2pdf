@@ -84,7 +84,7 @@ jobs:
       - name: Clone repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: ${{ inputs.GitLogLimit }}
 
       - name: Build PDF
         uses: innofactororg/markdown2pdf@v3beta1

@@ -83,10 +83,7 @@ runs:
     - name: Add tools to system path
       shell: sh
       run: |
-        echo "::group::tools_path"
-        echo "${GITHUB_ACTION_PATH}"
-        ls -la .
-        ls -la ${GITHUB_ACTION_PATH}
+        echo "::group::Add tools path"
         toolsFolder=$(readlink -f ${GITHUB_ACTION_PATH}/tools)
         echo 'Tools folder:'
         echo "${toolsFolder}"
@@ -98,20 +95,12 @@ runs:
     - name: Install requirements
       shell: sh
       run: |
+        echo "::group::Install requirements"
         apk add --no-cache git curl jq librsvg font-noto-cjk
         apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community font-carlito
         tlmgr update --self
         tlmgr install lastpage
-
-    - name: Install tools
-      env:
-        IN_SEVERITY: ${{ inputs.log_severity }}
-        IN_TEMPLATE: ${{ inputs.template }}
-        LOG_NAME: install_tools
-        LOG_ORDER: b1
-        LOG_PATH: ${{ runner.workspace }}/logs
-      shell: bash
-      run: install-tools.sh
+        echo '::endgroup::'
 
     - name: Build PDF
       shell: sh
@@ -130,12 +119,14 @@ runs:
         PROJECT: ${{ inputs.Project }}
         TEMPLATE: ${{ inputs.Template }}
       run: |
+        echo "::group::Build PDF"
         git config --global --add safe.directory '*'
         convert.sh -a "${AUTHOR}" -d "${DESCRIPTION}" -f "${FOLDER}" \
           -force "${SKIP_GIT_HISTORY}" -h "${HISTORY}" -l ${LIMIT} \
           -o "${ORDER_FILE}" -out "${OUT_FILE}" -p "${PROJECT}" \
           -r "${REPLACE_FILE}" -s "${SUBTITLE}" -t "${TITLE}" \
           --template "${TEMPLATE}"
+        echo '::endgroup::'
 
     - name: Publish PDF
       uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 #v4.3.0
