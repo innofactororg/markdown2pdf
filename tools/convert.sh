@@ -243,26 +243,27 @@ else
   mdOutFile="${OutFile}.md"
 fi
 info "Merge markdown files in ${orderFilePath}"
-printf "%s\n" "$(cat -- "${orderFilePath}")" | while read line; do
+printf '%s\n' "$(cat -- "${orderFilePath}")" | while read line; do
   if test -n "${line}" && ! [ "${line:0:1}" = '#' ]; then
     if ! test -f "${DocsPath}/${line}"; then
       error '' "Unable to find markdown file ${DocsPath}/${line}" 1
     fi
     mdFile=$(readlink -f -- "${DocsPath}/${line}")
     mdPath=$(dirname -- $mdFile)
-    tmpContent=$(printf "%s" "$(sed -e "s|\(\[.*\](\)\(.*)\)|\1${mdPath}/\2|g" "${mdFile}")")
+    tmpContent=$(printf '%s' "$(sed -e "s|\(\[.*\](\)\(.*)\)|\1${mdPath}/\2|g" "${mdFile}")")
     if test -n "${tmpContent}"; then
       info "Found ${#tmpContent} characters in ${mdFile}"
       if ! test -f "${mdOutFile}"; then
-        printf "${tmpContent}\n" > "${mdOutFile}"
+        printf '%s\n' "${tmpContent}" > "${mdOutFile}"
       else
-        printf "\n${tmpContent}\n" >> "${mdOutFile}"
+        printf '\n%s\n' "${tmpContent}" >> "${mdOutFile}"
       fi
     fi
   else
     info "Ignore $line"
   fi
 done
+info 'Done merging narkdown files'
 if ! test -f "${mdOutFile}"; then
   warning 'Unable to merge markdown files, no content found!'
   exit 1
