@@ -86,13 +86,13 @@ get_version_history() {
       error '' "Unable to find history file ${historyFilePath}" 1
     fi
     mergeLogs=$(cat -- ${historyFilePath})
-  elif [ "${ForceDefault}" = 'true' ]; then
-    mergeLogs=$(echo "tag: rel/repo/1.0.0|$currentDate|$DefaultAuthor|$DefaultDescription")
+  elif [ "${SkipGitCommitHistory}" = 'true' ]; then
+    mergeLogs=$(echo "tag: rel/repo/1.0.0|$currentDate|$MainAuthor|$FirstChangeDescription")
   else
-    mergeLogs=$(git --no-pager log -$LimitVersionHistory --date-order --date=format:'%b %e, %Y' --no-merges --oneline --pretty=format:'%D|%ad|%an|%s' -- $DocsPath)
+    mergeLogs=$(git --no-pager log -$GitLogLimit --date-order --date=format:'%b %e, %Y' --no-merges --oneline --pretty=format:'%D|%ad|%an|%s' -- $DocsPath)
   fi
   if [ -z "$mergeLogs" ]; then
-    mergeLogs=$(echo "tag: rel/repo/1.0.0|$currentDate|$DefaultAuthor|$DefaultDescription")
+    mergeLogs=$(echo "tag: rel/repo/1.0.0|$currentDate|$MainAuthor|$FirstChangeDescription")
   fi
   lineCount=$(echo "$mergeLogs" | wc -l)
   historyJson='[]'
@@ -119,11 +119,11 @@ process_params() {
     local arg="$1"
     case "$arg" in
       -a|--author)
-        DefaultAuthor=$(test_arg true 'Innofactor' "$@")
+        MainAuthor=$(test_arg true 'Innofactor' "$@")
         shift 2
         ;;
       -d|--description)
-        DefaultDescription=$(test_arg true 'Initial draft' "$@")
+        FirstChangeDescription=$(test_arg true 'Initial draft' "$@")
         shift 2
         ;;
       -f|--folder)
@@ -133,9 +133,9 @@ process_params() {
       -force|--force-default)
         shift
         if [ $# -eq 0 ] || echo "${1}" | grep -Eq '^-.*'; then
-          ForceDefault='true'
+          SkipGitCommitHistory='true'
         else
-          ForceDefault=$(test_true_false "${1}")
+          SkipGitCommitHistory=$(test_true_false "${1}")
           shift
         fi
         ;;
@@ -143,8 +143,8 @@ process_params() {
         HistoryFile=$(test_arg true '' "$@")
         shift 2
         ;;
-      -l|--limitversionhistory)
-        LimitVersionHistory=$(test_arg true 15 "$@")
+      -l|--gitloglimit)
+        GitLogLimit=$(test_arg true 15 "$@")
         shift 2
         ;;
       -o|--orderfile)
@@ -182,12 +182,12 @@ process_params() {
     esac
   done
 }
-DefaultAuthor='Innofactor'
-DefaultDescription='Initial draft'
+MainAuthor='Innofactor'
+FirstChangeDescription='Initial draft'
 DocsPath='docs'
-ForceDefault='false'
+SkipGitCommitHistory='false'
 HistoryFile=''
-LimitVersionHistory=15
+GitLogLimit=15
 OrderFile='document.order'
 OutFile='document.pdf'
 Project=''

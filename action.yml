@@ -1,0 +1,146 @@
+# Copyright (c) Innofactor Plc & AUTHORS
+# SPDX-License-Identifier: BSD-3-Clause
+#
+name: Build PDF
+author: Innofactor Plc
+description: Convert markdown files to a PDF file.
+branding:
+  icon: eye
+  color: green
+inputs:
+  FirstChangeDescription:
+    description: "The first change description."
+    required: false
+    type: string
+    default: Initial draft
+  Folder:
+    description: "The repository folder where the order file exist."
+    required: false
+    type: string
+    default: docs
+  GitLogLimit:
+    description: "Maximum entries to get from Git Log for version history."
+    required: false
+    type: number
+    default: 15
+  HistoryFile:
+    description: "The name of the history file."
+    required: false
+    type: string
+    default: ""
+  MainAuthor:
+    description: "The main author of the PDF content."
+    required: false
+    type: string
+    default: "Innofactor"
+  OrderFile:
+    description: "The name of the .order file."
+    required: false
+    type: string
+    default: document.order
+  OutFile:
+    description: "The name of the output file."
+    required: false
+    type: string
+    default: document.pdf
+  Project:
+    description: "The project ID or name."
+    required: false
+    type: string
+    default: ""
+  SkipGitCommitHistory:
+    description: "Skip using git commit history."
+    required: false
+    type: boolean
+    default: false
+  Subtitle:
+    description: "The document subtitle."
+    required: false
+    type: string
+    default: ""
+  Template:
+    description: "The template name. Must be: designdoc."
+    required: false
+    type: string
+    default: designdoc
+  Title:
+    description: "The document title."
+    required: true
+    type: string
+  ReplaceFile:
+    description: "The name of the replace file."
+    required: false
+    type: string
+    default: ""
+  RetentionDays:
+    description: "Number of days to retain job artifacts."
+    required: false
+    type: number
+    default: 5
+runs:
+  using: composite
+  steps:
+    - name: Add tools to system path
+      shell: bash
+      run: |
+        echo "::group::tools_path"
+        echo "${GITHUB_ACTION_PATH}"
+        ls -la .
+        ls -la ${GITHUB_ACTION_PATH}
+        toolsFolder=$(readlink -f ${GITHUB_ACTION_PATH}/tools)
+        echo 'Tools folder:'
+        echo "${toolsFolder}"
+        echo "${toolsFolder}" >> "${GITHUB_PATH}"
+        echo 'System path:'
+        echo "${PATH}"
+        echo '::endgroup::'
+
+    - name: Install requirements
+      shell: sh
+      run: |
+        apk add --no-cache git curl jq librsvg font-noto-cjk
+        apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community font-carlito
+        tlmgr update --self
+        tlmgr install lastpage
+
+    - name: Install tools
+      env:
+        IN_SEVERITY: ${{ inputs.log_severity }}
+        IN_TEMPLATE: ${{ inputs.template }}
+        LOG_NAME: install_tools
+        LOG_ORDER: b1
+        LOG_PATH: ${{ runner.workspace }}/logs
+      shell: bash
+      run: install-tools.sh
+
+    - name: Build PDF
+      shell: sh
+      env:
+        AUTHOR: ${{ inputs.MainAuthor }}
+        DESCRIPTION: ${{ inputs.FirstChangeDescription }}
+        TITLE: ${{ inputs.Title }}
+        SUBTITLE: ${{ inputs.Subtitle }}
+        FOLDER: ${{ inputs.Folder }}
+        SKIP_GIT_HISTORY: ${{ inputs.SkipGitCommitHistory }}
+        HISTORY: ${{ inputs.HistoryFile }}
+        LIMIT: ${{ inputs.GitLogLimit }}
+        ORDER_FILE: ${{ inputs.OrderFile }}
+        OUT_FILE: ${{ inputs.OutFile }}
+        REPLACE_FILE: ${{ inputs.ReplaceFile }}
+        PROJECT: ${{ inputs.Project }}
+        TEMPLATE: ${{ inputs.Template }}
+      run: |
+        git config --global --add safe.directory '*'
+        convert.sh -a "${AUTHOR}" -d "${DESCRIPTION}" -f "${FOLDER}" \
+          -force "${SKIP_GIT_HISTORY}" -h "${HISTORY}" -l ${LIMIT} \
+          -o "${ORDER_FILE}" -out "${OUT_FILE}" -p "${PROJECT}" \
+          -r "${REPLACE_FILE}" -s "${SUBTITLE}" -t "${TITLE}" \
+          --template "${TEMPLATE}"
+
+    - name: Publish PDF
+      uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 #v4.3.0
+      with:
+        if-no-files-found: error
+        name: ${{ inputs.OutFile }}
+        retention-days: ${{ inputs.RetentionDays }}
+        path: ${{ github.workspace }}/${{ inputs.OutFile }}*

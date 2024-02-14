@@ -3,70 +3,80 @@ name: 🧳 Convert Markdown
 on:
   workflow_call:
     inputs:
-      Title:
-        required: false
-        type: string
-        default: Innofactor
-      Subtitle:
-        required: false
-        type: string
-        default: DESIGN DOCUMENT
-      Project:
-        required: false
-        type: string
-        default: ""
-      Folder:
-        required: false
-        type: string
-        default: docs
-      Template:
-        required: false
-        type: string
-        default: designdoc
-      OrderFile:
-        required: false
-        type: string
-        default: document.order
-      HistoryFile:
-        required: false
-        type: string
-        default: ""
-      ReplaceFile:
-        required: false
-        type: string
-        default: ""
-      OutFile:
-        required: false
-        type: string
-        default: document.pdf
-      DefaultAuthor:
-        required: false
-        type: string
-        default: Innofactor
-      DefaultDescription:
+      FirstChangeDescription:
+        description: "The first change description."
         required: false
         type: string
         default: Initial draft
-      LimitVersionHistory:
+      Folder:
+        description: "The repository folder where the order file exist."
+        required: false
+        type: string
+        default: docs
+      GitLogLimit:
+        description: "Maximum entries to get from Git Log for version history."
         required: false
         type: number
         default: 15
-      ForceDefault:
+      HistoryFile:
+        description: "The name of the history file."
+        required: false
+        type: string
+        default: ""
+      MainAuthor:
+        description: "The main author of the PDF content."
+        required: false
+        type: string
+        default: "Innofactor"
+      OrderFile:
+        description: "The name of the .order file."
+        required: false
+        type: string
+        default: document.order
+      OutFile:
+        description: "The name of the output file."
+        required: false
+        type: string
+        default: document.pdf
+      Project:
+        description: "The project ID or name."
+        required: false
+        type: string
+        default: ""
+      SkipGitCommitHistory:
+        description: "Skip using git commit history."
         required: false
         type: boolean
         default: false
+      Subtitle:
+        description: "The document subtitle."
+        required: false
+        type: string
+        default: ""
+      Template:
+        description: "The template name. Must be: designdoc."
+        required: false
+        type: string
+        default: designdoc
+      Title:
+        description: "The document title."
+        required: true
+        type: string
+      ReplaceFile:
+        description: "The name of the replace file."
+        required: false
+        type: string
+        default: ""
       RetentionDays:
+        description: "Number of days to retain job artifacts."
         required: false
         type: number
         default: 5
 
-env:
-  VERSION: d76635a9ee3d37c5838a37ec96cc6583032552b9
-
 jobs:
   build:
     name: Convert Markdown
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     container:
       image: pandoc/extra:edge-alpine
       options: --entrypoint=sh
@@ -76,49 +86,20 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install requirements
-        shell: sh
-        run: |
-          apk add --no-cache git curl jq librsvg font-noto-cjk
-          apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community font-carlito
-          tlmgr update --self
-          tlmgr install lastpage
-
       - name: Build PDF
-        shell: sh
-        env:
-          AUTHOR: ${{ inputs.DefaultAuthor }}
-          DESCRIPTION: ${{ inputs.DefaultDescription }}
-          TITLE: ${{ inputs.Title }}
-          SUBTITLE: ${{ inputs.Subtitle }}
-          FOLDER: ${{ inputs.Folder }}
-          FORCE_DEFAULT: ${{ inputs.ForceDefault }}
-          HISTORY: ${{ inputs.HistoryFile }}
-          LIMIT: ${{ inputs.LimitVersionHistory }}
-          ORDER_FILE: ${{ inputs.OrderFile }}
-          OUT_FILE: ${{ inputs.OutFile }}
-          REPLACE_FILE: ${{ inputs.ReplaceFile }}
-          PROJECT: ${{ inputs.Project }}
-          TEMPLATE: ${{ inputs.Template }}
-        run: |
-          git config --global --add safe.directory '*'
-          server='raw.githubusercontent.com'
-          URL="https://${server}/innofactororg/markdown2pdf/${VERSION}/tools"
-          curl -o ${TEMPLATE}-cover.png -sSL ${URL}/${TEMPLATE}-cover.png
-          curl -o ${TEMPLATE}-logo.png -sSL ${URL}/${TEMPLATE}-logo.png
-          curl -o ${TEMPLATE}.tex -sSL ${URL}/${TEMPLATE}.tex
-          curl -o convert.sh -sSL ${URL}/convert.sh
-          chmod +x ./convert.sh
-          ./convert.sh -a "${AUTHOR}" -d "${DESCRIPTION}" -f "${FOLDER}" \
-            -force "${FORCE_DEFAULT}" -h "${HISTORY}" -l ${LIMIT} \
-            -o "${ORDER_FILE}" -out "${OUT_FILE}" -p "${PROJECT}" \
-            -r "${REPLACE_FILE}" -s "${SUBTITLE}" -t "${TITLE}" \
-            --template "${TEMPLATE}"
-
-      - name: Publish PDF
-        uses: actions/upload-artifact@v4
+        uses: innofactororg/markdown2pdf@v3beta1
         with:
-          name: ${{ inputs.OutFile }}
-          if-no-files-found: error
-          retention-days: ${{ inputs.RetentionDays }}
-          path: ${{ github.workspace }}/${{ inputs.OutFile }}*
+          FirstChangeDescription: ${{ inputs.FirstChangeDescription }}
+          Folder: ${{ inputs.Folder }}
+          GitLogLimit: ${{ inputs.GitLogLimit }}
+          HistoryFile: ${{ inputs.HistoryFile }}
+          MainAuthor: ${{ inputs.MainAuthor }}
+          OrderFile: ${{ inputs.OrderFile }}
+          OutFile: ${{ inputs.OutFile }}
+          Project: ${{ inputs.Project }}
+          SkipGitCommitHistory: ${{ inputs.SkipGitCommitHistory }}
+          Subtitle: ${{ inputs.Subtitle }}
+          Template: ${{ inputs.Template }}
+          Title: ${{ inputs.Title }}
+          ReplaceFile: ${{ inputs.ReplaceFile }}
+          RetentionDays: ${{ inputs.RetentionDays }}
