@@ -1,6 +1,6 @@
 # Markdown to PDF converter
 
-This composite action can be used to publish PDF from Markdown using a predefined latex template.
+This composite action can be used to publish PDF from Markdown using a predefined template.
 
 It use the following logic:
 
@@ -41,7 +41,6 @@ The following are known issues:
   - use an ordered or unordered list.
 - The template is designed for a standing A4 layout. It has no option to flip page orientation for one or several pages in a document.
 - Titles are not automatically numbered. Titles can be manually numbered and maintained in the markdown document. To avoid having to manually update all titles, it is best to not use numbered titles if possible.
-- Because the template is based on latex, backslash has a special meaning and can therefore cause an error from pandoc.
 
 ## Usage
 

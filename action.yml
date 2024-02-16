@@ -96,10 +96,7 @@ runs:
       shell: sh
       run: |
         echo "::group::Install requirements"
-        apk add --no-cache git curl jq librsvg font-noto-cjk
-        apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community font-carlito
-        tlmgr update --self
-        tlmgr install lastpage
+        tools-install.sh
         echo '::endgroup::'
 
     - name: Build PDF

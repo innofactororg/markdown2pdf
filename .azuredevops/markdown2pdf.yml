@@ -1,0 +1,91 @@
+# pipeline version: 3.0.1
+trigger: none
+pr:
+  autoCancel: true
+  drafts: false
+
+name: 🧳 Convert Markdown
+
+variables:
+  FIRST_CHANGE_DESCRIPTION: Initial draft
+  FOLDER: docs
+  GIT_LOG_LIMIT: 15
+  HISTORY_FILE:
+  MAIN_AUTHOR: Innofactor
+  ORDER_FILE: document.order
+  OUT_FILE: document.pdf
+  PROJECT:
+  SKIP_GIT_COMMIT_HISTORY: false
+  SUBTITLE: Design Document
+  TITLE: DNS
+  REPLACE_FILE:
+  VERSION_ACTION: v3.0.2beta1
+
+pool:
+  vmImage: ubuntu-22.04
+
+container: pandoc/extra:edge-ubuntu
+
+steps:
+  - checkout: self
+    displayName: Checkout
+    fetchDepth: 0
+
+  - task: Bash@3
+    displayName: Install tools
+    env:
+      SCRIPT: install-tools
+      VERSION: ${{ variables.VERSION_ACTION }}
+    inputs:
+      targetType: inline
+      script: |
+        HTTP_CODE=$(curl --show-error --silent --remote-name \
+          --write-out "%{response_code}" \
+          --header 'Accept: application/vnd.github.raw' \
+          --location https://github.com/innofactororg/markdown2pdf/raw/${VERSION}/tools/${SCRIPT}.sh
+        )
+        if [[ ${HTTP_CODE} -lt 200 || ${HTTP_CODE} -gt 299 ]]; then
+          echo "##[error]Unable to get ${SCRIPT} script! Response code: ${HTTP_CODE}"
+          exit 1
+        fi
+        git config --global --add safe.directory '*'
+        chmod +x ${SCRIPT}.sh
+        ./${SCRIPT}.sh
+
+  - task: Bash@3
+    displayName: Build PDF
+    env:
+      AUTHOR: ${{ variables.MAIN_AUTHOR }}
+      DESCRIPTION: ${{ variables.FIRST_CHANGE_DESCRIPTION }}
+      SKIP_GIT_HISTORY: ${{ variables.SKIP_GIT_COMMIT_HISTORY }}
+      HISTORY: ${{ variables.HISTORY_FILE }}
+      LIMIT: ${{ variables.GIT_LOG_LIMIT }}
+      SCRIPT: convert
+      VERSION: ${{ variables.VERSION_ACTION }}
+    inputs:
+      targetType: inline
+      script: |
+        HTTP_CODE=$(curl --show-error --silent --remote-name \
+          --write-out "%{response_code}" \
+          --header 'Accept: application/vnd.github.raw' \
+          --location https://github.com/innofactororg/markdown2pdf/raw/${VERSION}/tools/${SCRIPT}.sh
+        )
+        if [[ ${HTTP_CODE} -lt 200 || ${HTTP_CODE} -gt 299 ]]; then
+          echo "##[error]Unable to get ${SCRIPT} script! Response code: ${HTTP_CODE}"
+          exit 1
+        fi
+        git config --global --add safe.directory '*'
+        chmod +x ${SCRIPT}.sh
+        ./${SCRIPT}.sh -a "${AUTHOR}" -d "${DESCRIPTION}" -f "${FOLDER}" \
+          -force "${SKIP_GIT_HISTORY}" -h "${HISTORY}" -l ${LIMIT} \
+          -o "${ORDER_FILE}" -out "${OUT_FILE}" -p "${PROJECT}" \
+          -r "${REPLACE_FILE}" -s "${SUBTITLE}" -t "${TITLE}" \
+          --template "designdoc"
+
+  - task: PublishPipelineArtifact@1
+    displayName: Publish PDF
+    condition: always()
+    inputs:
+      targetPath: $(Pipeline.Workspace)/${{ variables.OUT_FILE }}
+      artifact: ${{ variables.OUT_FILE }}
+      publishLocation: pipeline
