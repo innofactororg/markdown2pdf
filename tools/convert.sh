@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-set -Eeuo pipefail
+set -e
 trap 'error_handler $LINENO "$SCRIPT_COMMAND" $?' ERR 1 2 3 6
 trap cleanup EXIT
 error_handler() {
