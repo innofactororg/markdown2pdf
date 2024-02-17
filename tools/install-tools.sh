@@ -2,6 +2,7 @@
 set -e
 if type apt-get > /dev/null 2>&1; then
   scriptPath="$(dirname "$(readlink -f "$0")")"
+  echo "Script Path: ${scriptPath}"
   sudo apt-get -q --no-allow-insecure-repositories update
   export DEBIAN_FRONTEND=noninteractive
   sudo apt-get install --assume-yes --no-install-recommends \
