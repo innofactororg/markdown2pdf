@@ -11,7 +11,7 @@ if type apt-get > /dev/null 2>&1; then
   if ! test -f /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc; then
     sudo apt-get install --assume-yes --no-install-recommends fonts-noto-cjk
   fi
-  if ! test -f /usr/share/fonts/truetype/crosextra/Carlito-Regular.ttf
+  if ! test -f /usr/share/fonts/truetype/crosextra/Carlito-Regular.ttf; then
     sudo apt-get install --assume-yes --no-install-recommends fonts-crosextra-carlito
   fi
   if ! type tlmgr > /dev/null 2>&1; then
