@@ -4,7 +4,7 @@ set -e
 trap cleanup EXIT
 cleanup() {
   if test -f "$DocsPath/metadata.json"; then
-    rm -f -- "$DocsPath/metadata.json"
+    rm -f "$DocsPath/metadata.json"
   fi
 }
 error() {
@@ -83,13 +83,13 @@ get_version_history() {
     if ! test -f "${historyFilePath}"; then
       error '' "Unable to find history file ${historyFilePath}" 1
     fi
-    mergeLogs=$(cat -- "${historyFilePath}")
+    mergeLogs=$(cat "${historyFilePath}")
   elif [ "${SkipGitCommitHistory}" = 'true' ]; then
     mergeLogs="tag: rel/repo/1.0.0|$currentDate|$MainAuthor|$FirstChangeDescription"
   else
     mergeLogs=$(
       git --no-pager log "-${GitLogLimit}" --date-order --date=format:'%b %e, %Y' \
-        --no-merges --oneline --pretty=format:'%D|%ad|%an|%s' -- "${DocsPath}"
+        --no-merges --oneline --pretty=format:'%D|%ad|%an|%s' "${DocsPath}"
     )
   fi
   if test -z "${mergeLogs}"; then
@@ -215,7 +215,7 @@ fi
 if ! test -d "${DocsPath}"; then
   error '' "Unable to find folder ${DocsPath}" 1
 fi
-scriptPath="$(dirname -- "$(readlink -f "$0")")"
+scriptPath="$(dirname "$(readlink -f "$0")")"
 # Get path to docs files in the same folder as the docs
 historyFilePath=$(get_file_path "$HistoryFile" "$DocsPath")
 orderFilePath=$(get_file_path "$OrderFile" "$DocsPath")
@@ -244,13 +244,13 @@ else
   mdOutFile="${OutFile}.md"
 fi
 info "Merge markdown files in ${orderFilePath}"
-printf '%s\n' "$(cat -- "${orderFilePath}")" | while read -r line; do
+printf '%s\n' "$(cat "${orderFilePath}")" | while read -r line; do
   if test -n "${line}" && ! [ "$(printf '%s' "$line" | cut -c 1)" = '#' ]; then
     if ! test -f "${DocsPath}/${line}"; then
       error '' "Unable to find markdown file ${DocsPath}/${line}" 1
     fi
-    mdFile="$(readlink -f -- "${DocsPath}/${line}")"
-    mdPath="$(dirname --"$mdFile")"
+    mdFile="$(readlink -f "${DocsPath}/${line}")"
+    mdPath="$(dirname "$mdFile")"
     tmpContent=$(
       printf '%s' "$(sed -e "s|\(\[.*\](\)\(\../\)\(.*)\)|\1${mdPath}/\2\3|g" "${mdFile}" | sed -e "s|\(\[.*\](\)\(\./\)\(.*)\)|\1${mdPath}/\3|g" | sed -e "s|\(\[.*\](\)\(asset\)\(.*)\)|\1${mdPath}/\2\3|g" | sed -e "s|\(\[.*\](\)\(attach\)\(.*)\)|\1${mdPath}/\2\3|g" | sed -e "s|\(\[.*\](\)\(image\)\(.*)\)|\1${mdPath}/\2\3|g" | sed -e "s|\(\[.*\](\)\(\.\)\(.*)\)|\1${mdPath}/\2\3|g")"
     )
