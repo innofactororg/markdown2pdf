@@ -43,9 +43,9 @@ if type apt-get > /dev/null 2>&1; then
     TLPKG=$(readlink -f "${scriptPath}/texlive_packages.txt")
     sed -e 's/ *#.*$//' -e '/^ *$/d' "${TLPKG}" | xargs sudo env "PATH=${PATH}" tlmgr install
     sudo chmod -R o+w /opt/texlive/texdir/texmf-var
-    TLREQ=$(readlink -f "${scriptPath}/pip_requirements.txt")
-    sudo env "PATH=${PATH}" pip3 --no-cache-dir install -r "${TLREQ}"
   fi
+  TLREQ=$(readlink -f "${scriptPath}/pip_requirements.txt")
+  sudo env "PATH=${PATH}" pip3 --no-cache-dir install -r "${TLREQ}"
 elif type apk > /dev/null 2>&1; then
   apk add --no-cache git curl jq librsvg font-noto-cjk
   apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community font-carlito
