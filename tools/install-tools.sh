@@ -8,10 +8,10 @@ if type apt-get > /dev/null 2>&1; then
   if ! type rsvg-convert > /dev/null 2>&1; then
     sudo apt-get install --assume-yes --no-install-recommends librsvg2-bin
   fi
-  if ! test -f /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc; then
+  if ! test -f "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"; then
     sudo apt-get install --assume-yes --no-install-recommends fonts-noto-cjk
   fi
-  if ! test -f /usr/share/fonts/truetype/crosextra/Carlito-Regular.ttf; then
+  if ! test -f "/usr/share/fonts/truetype/crosextra/Carlito-Regular.ttf"; then
     sudo apt-get install --assume-yes --no-install-recommends fonts-crosextra-carlito
   fi
   if ! type tlmgr > /dev/null 2>&1; then
@@ -21,7 +21,7 @@ if type apt-get > /dev/null 2>&1; then
   cd /tmp
   export PATH=/opt/texlive/texdir/bin/x86_64-linux:"${PATH}"
   echo '##vso[task.prependpath]/opt/texlive/texdir/bin/x86_64-linux'
-  if test -f /opt/texlive/texdir/install-tl && type tlmgr > /dev/null 2>&1; then
+  if test -f "/opt/texlive/texdir/install-tl" && type tlmgr > /dev/null 2>&1; then
     tlmgr path add
   else
     HTTP_CODE=$(curl --show-error --silent --remote-name \
