@@ -115,7 +115,16 @@ get_version_history() {
       --arg description "$description" \
       '. +=[{ version: $version, date: $date, author: $author, description: $description }]' > tmp_history_41231.json
   done
-  jq '.' tmp_history_41231.json
+  if test -f tmp_history_41231.json; then
+    jq '.' tmp_history_41231.json
+  else
+    printf '%s\n' '[]' | jq --arg version '1.0.0' \
+        --arg date "$currentDate" \
+        --arg author "$MainAuthor" \
+        --arg description "$FirstChangeDescription" \
+        '. +=[{ version: $version, date: $date, author: $author, description: $description }]' > tmp_history_41231.json
+    jq '.' tmp_history_41231.json
+  fi
   rm -f tmp_history_41231.json
 }
 process_params() {
@@ -297,7 +306,7 @@ set_metadataContent <<META_DATA || true
   "date": "${currentDate}",
   "disable-header-and-footer": false,
   "disclaimer": "This document contains business and trade secrets (essential information about Innofactor's business) and is therefore totally confidential. Confidentiality does not apply to pricing information",
-  "footer-center": "Page (\\\thepage ) of \\\pageref{LastPage}",
+  "footer-center": "Page (\\\\thepage ) of \\\\pageref{LastPage}",
   "geometry":"a4paper,left=2.54cm,right=2.54cm,top=1.91cm,bottom=2.54cm",
   "links-as-notes": true,
   "listings-disable-line-numbers": false,
@@ -328,7 +337,7 @@ set_metadataContent <<META_DATA || true
   "version-history": $versionHistory
 }
 META_DATA
-echo "${metadataContent}" | jq '.' > "${DocsPath}/metadata.json"
+printf '%s\n' "${metadataContent}" | jq '.' > "${DocsPath}/metadata.json"
 if test -n "${mdContent}"; then
   info "The markdown contains ${#mdContent} characters"
   info "Create ${OutFile} using metadata:"

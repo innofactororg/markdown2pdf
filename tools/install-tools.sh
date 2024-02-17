@@ -12,7 +12,15 @@ if type apt-get > /dev/null 2>&1; then
   sudo apt-get install --assume-yes --no-install-recommends pandoc
   sudo rm -rf /var/lib/apt/lists/*
   cd /tmp
-  wget https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz
+  HTTP_CODE=$(curl --show-error --silent --remote-name \
+    --write-out "%{response_code}" \
+    --header 'Accept: application/gzip' \
+    --location https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz
+  )
+  if [[ ${HTTP_CODE} -lt 200 || ${HTTP_CODE} -gt 299 ]]; then
+    echo "##[error]Unable to get install-tl-unx.tar.gz! Response code: ${HTTP_CODE}"
+    exit 1
+  fi
   zcat < install-tl-unx.tar.gz | tar xf -
   rm -f install-tl-unx.tar.gz
   TLTMP=$(readlink -f install-tl-*)
