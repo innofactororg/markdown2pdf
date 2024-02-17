@@ -25,16 +25,16 @@ if type apt-get > /dev/null 2>&1; then
   rm -f install-tl-unx.tar.gz
   TLTMP=$(readlink -f install-tl-*)
   TLPROFILE=$(readlink -f "${scriptPath}/texlive.profile")
-  sudo perl "$TLTMP/install-tl" --no-interaction --no-doc-install --no-src-install --profile="$TLPROFILE"
-  rm -rf "$TLTMP"
-  export PATH=/opt/texlive/texdir/bin/x86_64-linux:"$PATH"
+  sudo perl "${TLTMP}/install-tl" --no-interaction --no-doc-install --no-src-install --profile="${TLPROFILE}"
+  rm -rf "${TLTMP}"
+  export PATH=/opt/texlive/texdir/bin/x86_64-linux:"${PATH}"
   echo '##vso[task.prependpath]/opt/texlive/texdir/bin/x86_64-linux'
-  sudo env "PATH=$PATH" tlmgr init-usertree
+  sudo env "PATH=${PATH}" tlmgr init-usertree
   TLPKG=$(readlink -f "${scriptPath}/texlive_packages.txt")
-  sed -e 's/ *#.*$//' -e '/^ *$/d' "$TLPKG" | xargs sudo env "PATH=$PATH" tlmgr install
+  sed -e 's/ *#.*$//' -e '/^ *$/d' "${TLPKG}" | xargs sudo env "PATH=${PATH}" tlmgr install
   sudo chmod -R o+w /opt/texlive/texdir/texmf-var
   TLREQ=$(readlink -f "${scriptPath}/pip_requirements.txt")
-  sudo env "PATH=$PATH" pip3 --no-cache-dir install -r "$TLREQ"
+  sudo env "PATH=${PATH}" pip3 --no-cache-dir install -r "${TLREQ}"
 elif type apk > /dev/null 2>&1; then
   apk add --no-cache git curl jq librsvg font-noto-cjk
   apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community font-carlito
