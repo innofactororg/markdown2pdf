@@ -29,7 +29,7 @@ if type apt-get > /dev/null 2>&1; then
       --header 'Accept: application/gzip' \
       --location https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz
     )
-    if [ ${HTTP_CODE} -lt 200 ] || [ ${HTTP_CODE} -gt 299 ]; then
+    if [ "${HTTP_CODE}" -lt 200 ] || [ "${HTTP_CODE}" -gt 299 ]; then
       echo "##[error]Unable to get install-tl-unx.tar.gz! Response code: ${HTTP_CODE}"
       exit 1
     fi
