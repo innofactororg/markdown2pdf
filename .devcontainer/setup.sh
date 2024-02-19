@@ -1,4 +1,5 @@
 #!/usr/bin/env sh
+# shellcheck disable=SC2016
 if [ -d "/var/run/docker.sock" ]; then
   # Grant access to the docker socket
   sudo chmod 666 /var/run/docker.sock
@@ -8,8 +9,8 @@ if ! [ -d ~/.ssh ]; then
   if [ -d /tmp/.ssh-localhost ]; then
     command mkdir -p -- ~/.ssh
     sudo cp -R /tmp/.ssh-localhost/* ~/.ssh
-    sudo chown -R $(whoami):$(whoami) ~ || true ?>/dev/null
-    sudo chmod 400 ~/.ssh/*
+    sudo chown -R -- "$(whoami):$(whoami)" ~ || true -- ?>/dev/null
+    sudo chmod 400 -- ~/.ssh/*
   fi
 fi
 

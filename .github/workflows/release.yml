@@ -21,6 +21,6 @@ jobs:
       contents: write
     steps:
       - name: "Release"
-        uses: innofactororg/code-release@v1
+        uses: innofactororg/code-release@v2
         with:
           tag: ${{ github.event.inputs.tag }}
