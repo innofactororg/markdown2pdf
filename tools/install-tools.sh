@@ -8,6 +8,7 @@ aptinstall() {
   sudo apt-get install --assume-yes --no-install-recommends "${1}"
 }
 if type apt-get > /dev/null 2>&1; then
+  texlivebin=''
   export DEBIAN_FRONTEND=noninteractive
   apt_update=0
   if ! type rsvg-convert > /dev/null 2>&1; then
@@ -25,7 +26,8 @@ if type apt-get > /dev/null 2>&1; then
   sudo rm -rf /var/lib/apt/lists/* > /dev/null 2>&1
   scriptPath="$(dirname "$(readlink -f "$0")")"
   if test -f "/opt/texlive/texdir/install-tl"; then
-    export PATH="$(dirname $(find /opt/texlive/texdir/bin -name tlmgr)):${PATH}"
+    texlivebin="$(dirname $(find /opt/texlive/texdir/bin -name tlmgr))"
+    export PATH="${texlivebin}:${PATH}"
     sudo env "PATH=${PATH}" tlmgr path add
   else
     cd /tmp
@@ -44,13 +46,14 @@ if type apt-get > /dev/null 2>&1; then
     TLPROFILE=$(readlink -f "${scriptPath}/texlive.profile")
     sudo perl "${TLTMP}/install-tl" --no-interaction --no-doc-install --no-src-install --profile="${TLPROFILE}"
     rm -rf "${TLTMP}"
-    export PATH="$(dirname $(find /opt/texlive/texdir/bin -name tlmgr)):${PATH}"
+    texlivebin="$(dirname $(find /opt/texlive/texdir/bin -name tlmgr))"
+    export PATH="${texlivebin}:${PATH}"
     sudo env "PATH=${PATH}" tlmgr init-usertree
     TLPKG=$(readlink -f "${scriptPath}/texlive_packages.txt")
     sed -e 's/ *#.*$//' -e '/^ *$/d' "${TLPKG}" | xargs sudo env "PATH=${PATH}" tlmgr install
     sudo chmod -R o+w /opt/texlive/texdir/texmf-var
   fi
-  echo '##vso[task.prependpath]/opt/texlive/texdir/bin/default'
+  echo "##vso[task.prependpath]${texlivebin}"
   TLREQ=$(readlink -f "${scriptPath}/requirements.txt")
   sudo env "PATH=${PATH}" pip3 --no-cache-dir install -r "${TLREQ}"
 elif type apk > /dev/null 2>&1; then
