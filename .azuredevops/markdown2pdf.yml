@@ -59,7 +59,7 @@ steps:
           "${SCRIPT}.sh"
           texlive.profile
           texlive_packages.txt
-          pip_requirements.txt
+          requirements.txt
         )
         for file in "${files[@]}"; do
           HTTP_CODE=$(curl --show-error --silent --remote-name \

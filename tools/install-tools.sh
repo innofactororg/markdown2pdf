@@ -58,7 +58,7 @@ if type apt-get > /dev/null 2>&1; then
     sudo chmod -R o+w /opt/texlive/texdir/texmf-var
   fi
   echo '##vso[task.prependpath]/opt/texlive/texdir/bin/default'
-  TLREQ=$(readlink -f "${scriptPath}/pip_requirements.txt")
+  TLREQ=$(readlink -f "${scriptPath}/requirements.txt")
   sudo env "PATH=${PATH}" pip3 --no-cache-dir install -r "${TLREQ}"
 elif type apk > /dev/null 2>&1; then
   if ! type git > /dev/null 2>&1; then
