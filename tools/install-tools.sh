@@ -24,17 +24,12 @@ if type apt-get > /dev/null 2>&1; then
   fi
   sudo rm -rf /var/lib/apt/lists/* > /dev/null 2>&1
   scriptPath="$(dirname "$(readlink -f "$0")")"
+  case ":${PATH}:" in
+    *":/opt/texlive/texdir/bin/default:"*) :;;
+    *) export PATH="/opt/texlive/texdir/bin/default${PATH:+":$PATH"}" ;;
+  esac
   if test -f "/opt/texlive/texdir/install-tl"; then
-    case ":${PATH}:" in
-      *":/opt/texlive/texdir/bin/default:"*) :;;
-      *) export PATH="/opt/texlive/texdir/bin/default${PATH:+":$PATH"}" ;;
-    esac
-    if type tlmgr > /dev/null 2>&1; then
-      tlmgr path add
-    else
-      echo "Unable to find tlmgr in path: ${PATH}"
-      exit 1
-    fi
+    sudo env "PATH=${PATH}" tlmgr path add
   else
     cd /tmp
     HTTP_CODE=$(curl --show-error --silent --remote-name \
