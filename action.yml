@@ -108,7 +108,7 @@ runs:
       with:
         python-version: 3.x
         cache: pip # cache pip dependencies
-        cache-dependency-path: tools/pip_requirements.txt
+        cache-dependency-path: ${GITHUB_ACTION_PATH}/tools/pip_requirements.txt
 
     - name: Install requirements
       shell: sh
