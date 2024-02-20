@@ -20,6 +20,8 @@ if type apt-get > /dev/null 2>&1; then
     aptinstall fonts-noto-cjk
   fi
   if ! test -f '/usr/share/fonts/truetype/crosextra/Carlito-Regular.ttf'; then
+    sudo add-apt-repository universe
+    apt_update=0
     aptinstall fonts-crosextra-carlito
   fi
   if ! type pandoc > /dev/null 2>&1; then
