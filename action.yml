@@ -96,7 +96,7 @@ runs:
       shell: sh
       run: |
         echo "::group::Install requirements"
-        tools-install.sh
+        install-tools.sh
         echo '::endgroup::'
 
     - name: Build PDF
