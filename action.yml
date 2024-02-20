@@ -107,13 +107,16 @@ runs:
         key: ${{ runner.os }}-texlive
         path: /opt/texlive
 
-    - uses: actions/setup-python@871daa956ca9ea99f3c3e30acb424b7960676734 # v5.0.0 + 3 commits
+    - name: Cache pip
+      uses: actions/cache@13aacd865c20de90d75de3b17ebe84f7a17d57d2 # v4.0.0
       with:
-        python-version: 3.x
-        cache: pip # cache pip dependencies
+        key: ${{ runner.os }}-pip
+        path: ${{ runner.workspace }}/.pip
 
     - name: Install requirements
       shell: sh
+      env:
+        pip_cache_dir: ${{ runner.workspace }}/.pip
       run: |
         echo "::group::Install requirements"
         install-tools.sh
