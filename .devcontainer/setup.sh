@@ -14,7 +14,7 @@ if ! [ -d ~/.ssh ]; then
   fi
 fi
 
-apk add --no-cache git curl jq librsvg font-noto-cjk zsh bash starship
+apk add --no-cache git wget jq librsvg font-noto-cjk zsh bash starship
 apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community font-carlito font-fira-code-nerd shellcheck
 
 pip install pre-commit

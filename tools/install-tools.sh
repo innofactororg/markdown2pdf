@@ -31,10 +31,11 @@ if type apt-get > /dev/null 2>&1; then
     sudo env "PATH=${PATH}" tlmgr path add
   else
     cd /tmp
-    HTTP_CODE=$(curl --show-error --silent --remote-name \
-      --write-out "%{response_code}" \
-      --header 'Accept: application/gzip' \
-      --location https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz
+    url='https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz'
+    echo "Download ${url}"
+    HTTP_CODE=$(wget --tries=3 --server-response \
+      --no-check-certificate --quiet ${url} 2>&1 | \
+      awk '/^  HTTP/{print $2}' | tail -1 || true
     )
     if [ "${HTTP_CODE}" -lt 200 ] || [ "${HTTP_CODE}" -gt 299 ]; then
       echo "##[error]Unable to get install-tl-unx.tar.gz! Response code: ${HTTP_CODE}"
@@ -60,8 +61,8 @@ elif type apk > /dev/null 2>&1; then
   if ! type git > /dev/null 2>&1; then
     apk add --no-cache git
   fi
-  if ! type curl > /dev/null 2>&1; then
-    apk add --no-cache curl
+  if ! type wget > /dev/null 2>&1; then
+    apk add --no-cache wget
   fi
   if ! type jq > /dev/null 2>&1; then
     apk add --no-cache jq

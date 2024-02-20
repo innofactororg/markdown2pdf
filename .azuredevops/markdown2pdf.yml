@@ -62,10 +62,11 @@ steps:
           requirements.txt
         )
         for file in "${files[@]}"; do
-          HTTP_CODE=$(curl --show-error --silent --remote-name \
-            --write-out "%{response_code}" \
-            --header 'Accept: application/vnd.github.raw' \
-            --location "https://github.com/innofactororg/markdown2pdf/raw/${VERSION}/tools/${file}"
+          url="https://github.com/innofactororg/markdown2pdf/raw/${VERSION}/tools/${file}"
+          echo "Download ${url}"
+          HTTP_CODE=$(wget --tries=3 --server-response \
+            --no-check-certificate --quiet ${url} 2>&1 | \
+            awk '/^  HTTP/{print $2}' | tail -1 || true
           )
           if [ "${HTTP_CODE}" -lt 200 ] || [ "${HTTP_CODE}" -gt 299 ]; then
             echo "##[error]Unable to get ${file}! Response code: ${HTTP_CODE}"
@@ -95,10 +96,11 @@ steps:
           designdoc-logo.png
         )
         for file in "${files[@]}"; do
-          HTTP_CODE=$(curl --show-error --silent --remote-name \
-            --write-out "%{response_code}" \
-            --header 'Accept: application/vnd.github.raw' \
-            --location "https://github.com/innofactororg/markdown2pdf/raw/${VERSION}/tools/${file}"
+          url="https://github.com/innofactororg/markdown2pdf/raw/${VERSION}/tools/${file}"
+          echo "Download ${url}"
+          HTTP_CODE=$(wget --tries=3 --server-response \
+            --no-check-certificate --quiet ${url} 2>&1 | \
+            awk '/^  HTTP/{print $2}' | tail -1 || true
           )
           if [ "${HTTP_CODE}" -lt 200 ] || [ "${HTTP_CODE}" -gt 299 ]; then
             echo "##[error]Unable to get ${file}! Response code: ${HTTP_CODE}"
