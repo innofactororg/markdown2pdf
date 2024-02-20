@@ -13,7 +13,7 @@ instopt_portable 0
 instopt_write18_restricted 1
 tlpdbopt_autobackup 0
 tlpdbopt_backupdir tlpkg/backups
-tlpdbopt_create_formats 0
+tlpdbopt_create_formats 1
 tlpdbopt_desktop_integration 1
 tlpdbopt_file_assocs 1
 tlpdbopt_generate_updmap 0
