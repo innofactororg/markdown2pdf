@@ -6,7 +6,6 @@ aptinstall() {
     apt_update=1
   fi
   sudo apt-get install --assume-yes --no-install-recommends "${1}"
-  sudo rm -rf /var/lib/apt/lists/* > /dev/null 2>&1
 }
 if type apt-get > /dev/null 2>&1; then
   export DEBIAN_FRONTEND=noninteractive
@@ -15,18 +14,15 @@ if type apt-get > /dev/null 2>&1; then
     aptinstall librsvg2-bin
   fi
   if ! test -f '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc'; then
-    sudo add-apt-repository main
-    apt_update=0
     aptinstall fonts-noto-cjk
   fi
   if ! test -f '/usr/share/fonts/truetype/crosextra/Carlito-Regular.ttf'; then
-    sudo add-apt-repository universe
-    apt_update=0
     aptinstall fonts-crosextra-carlito
   fi
   if ! type pandoc > /dev/null 2>&1; then
     aptinstall pandoc
   fi
+  sudo rm -rf /var/lib/apt/lists/* > /dev/null 2>&1
   scriptPath="$(dirname "$(readlink -f "$0")")"
   if test -f "/opt/texlive/texdir/install-tl"; then
     case ":${PATH}:" in
