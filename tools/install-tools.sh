@@ -54,7 +54,11 @@ if type apt-get > /dev/null 2>&1; then
     sed -e 's/ *#.*$//' -e '/^ *$/d' "${TLPKG}" | xargs sudo env "PATH=${PATH}" tlmgr install
     sudo chmod -R o+w /opt/texlive/texdir/texmf-var
   fi
-  echo "##vso[task.prependpath]${texlivebin}"
+  if [ -n "${TF_BUILD-}" ]; then
+    echo "##vso[task.prependpath]${texlivebin}"
+  else
+    echo "${texlivebin}" >> "${GITHUB_PATH}"
+  fi
   TLREQ=$(readlink -f "${scriptPath}/requirements.txt")
   sudo env "PATH=${PATH}" pip3 --no-cache-dir install -r "${TLREQ}"
 elif type apk > /dev/null 2>&1; then
