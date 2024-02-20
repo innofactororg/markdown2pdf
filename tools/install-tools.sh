@@ -1,29 +1,42 @@
 #!/usr/bin/env sh
 set -e
+aptinstall() {
+  if [ "${apt_update}" -eq 0 ]; then
+    sudo apt-get -q --no-allow-insecure-repositories update
+    apt_update=1
+  fi
+  sudo apt-get install --assume-yes --no-install-recommends "${1}"
+  sudo rm -rf /var/lib/apt/lists/* > /dev/null 2>&1
+}
 if type apt-get > /dev/null 2>&1; then
-  scriptPath="$(dirname "$(readlink -f "$0")")"
-  echo "Script Path: ${scriptPath}"
-  sudo apt-get -q --no-allow-insecure-repositories update
   export DEBIAN_FRONTEND=noninteractive
+  apt_update=0
   if ! type rsvg-convert > /dev/null 2>&1; then
-    sudo apt-get install --assume-yes --no-install-recommends librsvg2-bin
+    aptinstall librsvg2-bin
   fi
   if ! test -f '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc'; then
-    sudo apt-get install --assume-yes --no-install-recommends fonts-noto-cjk
+    aptinstall fonts-noto-cjk
   fi
   if ! test -f '/usr/share/fonts/truetype/crosextra/Carlito-Regular.ttf'; then
-    sudo apt-get install --assume-yes --no-install-recommends fonts-crosextra-carlito
+    aptinstall fonts-crosextra-carlito
   fi
-  if ! type tlmgr > /dev/null 2>&1; then
-    sudo apt-get install --assume-yes --no-install-recommends pandoc
+  if ! type pandoc > /dev/null 2>&1; then
+    aptinstall pandoc
   fi
-  sudo rm -rf /var/lib/apt/lists/*
-  cd /tmp
-  export PATH=/opt/texlive/texdir/bin/x86_64-linux:"${PATH}"
-  echo '##vso[task.prependpath]/opt/texlive/texdir/bin/x86_64-linux'
-  if test -f "/opt/texlive/texdir/install-tl" && type tlmgr > /dev/null 2>&1; then
-    tlmgr path add
+  scriptPath="$(dirname "$(readlink -f "$0")")"
+  if test -f "/opt/texlive/texdir/install-tl"; then
+    case ":${PATH}:" in
+      *":/opt/texlive/texdir/bin/default:"*) :;;
+      *) export PATH="/opt/texlive/texdir/bin/default${PATH:+":$PATH"}" ;;
+    esac
+    if type tlmgr > /dev/null 2>&1; then
+      tlmgr path add
+    else
+      echo "Unable to find tlmgr in path: ${PATH}"
+      exit 1
+    fi
   else
+    cd /tmp
     HTTP_CODE=$(curl --show-error --silent --remote-name \
       --write-out "%{response_code}" \
       --header 'Accept: application/gzip' \
@@ -44,6 +57,7 @@ if type apt-get > /dev/null 2>&1; then
     sed -e 's/ *#.*$//' -e '/^ *$/d' "${TLPKG}" | xargs sudo env "PATH=${PATH}" tlmgr install
     sudo chmod -R o+w /opt/texlive/texdir/texmf-var
   fi
+  echo '##vso[task.prependpath]/opt/texlive/texdir/bin/default'
   TLREQ=$(readlink -f "${scriptPath}/pip_requirements.txt")
   sudo env "PATH=${PATH}" pip3 --no-cache-dir install -r "${TLREQ}"
 elif type apk > /dev/null 2>&1; then
@@ -69,10 +83,10 @@ elif type apk > /dev/null 2>&1; then
     tlmgr update --self
     tlmgr install lastpage
   else
-    echo 'Unable to find tlmgr!'
+    echo "Unable to find tlmgr in path: ${PATH}"
     exit 1
   fi
 else
-  echo 'Unable to find apt-get and apk!'
+  echo 'Unable to find apt-get or apk!'
   exit 1
 fi

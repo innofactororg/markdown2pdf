@@ -213,11 +213,9 @@ jobs:
     permissions:
       contents: read # for checkout
     runs-on: ubuntu-22.04
-    container:
-      image: pandoc/extra:edge-alpine
     steps:
       - name: Clone repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 #v4.1.1
         with:
           fetch-depth: 0
 

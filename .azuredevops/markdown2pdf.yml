@@ -29,20 +29,29 @@ steps:
     fetchDepth: 0
 
   - task: Cache@2
+    displayName: Cache Fonts
+    inputs:
+      key: 'fonts | "$(Agent.OS)"'
+      path: /usr/share/fonts
+
+  - task: Cache@2
     displayName: Cache TeX Live
     inputs:
-      cacheHitVar: TEX_LIVE_CACHE_RESTORED
-      key:  |
-        "texlive" | "$(Agent.OS)" | $(Build.SourceVersion)
+      key: 'texlive | "$(Agent.OS)"'
       path: /opt/texlive
-      restoreKeys: |
-        "texlive" | "$(Agent.OS)"
+
+  - task: Cache@2
+    displayName: Cache pip
+    inputs:
+      key: 'pip | "$(Agent.OS)"'
+      path: $(Pipeline.Workspace)/.pip
 
   - task: Bash@3
     displayName: Install tools
     env:
       SCRIPT: install-tools
       VERSION: ${{ variables.WORKFLOW_VERSION }}
+      pip_cache_dir: $(Pipeline.Workspace)/.pip
     inputs:
       targetType: inline
       script: |
