@@ -90,6 +90,9 @@ runs:
         echo "${toolsFolder}" >> "${GITHUB_PATH}"
         echo 'System path:'
         echo "${PATH}"
+        if test -f "${GITHUB_ACTION_PATH}/tools/requirements.txt"; then
+          cp -f "${GITHUB_ACTION_PATH}/tools/requirements.txt" ./
+        fi
         echo '::endgroup::'
 
     - name: Cache Fonts
