@@ -24,8 +24,8 @@ if type apt-get > /dev/null 2>&1; then
   fi
   sudo rm -rf /var/lib/apt/lists/* > /dev/null 2>&1
   scriptPath="$(dirname "$(readlink -f "$0")")"
-  export PATH="$(readlink -f /opt/texlive/texdir/bin/default):${PATH}"
   if test -f "/opt/texlive/texdir/install-tl"; then
+    export PATH="$(readlink -f /opt/texlive/texdir/bin/default):${PATH}"
     sudo env "PATH=${PATH}" tlmgr path add
   else
     cd /tmp
@@ -44,6 +44,7 @@ if type apt-get > /dev/null 2>&1; then
     TLPROFILE=$(readlink -f "${scriptPath}/texlive.profile")
     sudo perl "${TLTMP}/install-tl" --no-interaction --no-doc-install --no-src-install --profile="${TLPROFILE}"
     rm -rf "${TLTMP}"
+    export PATH="$(readlink -f /opt/texlive/texdir/bin/default):${PATH}"
     sudo env "PATH=${PATH}" tlmgr init-usertree
     TLPKG=$(readlink -f "${scriptPath}/texlive_packages.txt")
     sed -e 's/ *#.*$//' -e '/^ *$/d' "${TLPKG}" | xargs sudo env "PATH=${PATH}" tlmgr install
