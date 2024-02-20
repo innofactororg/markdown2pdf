@@ -133,13 +133,13 @@ The following are known issues:
 
 - **PROJECT**: The project ID or name.
 
+- **REPLACE_FILE**: The name of the replace file. This is a JSON file with key and value strings. Each key will be searched for in the markdown files and replaced with the value before conversion to PDF.
+
 - **SKIP_GIT_COMMIT_HISTORY**: Skip using git commit history. When set to true, the change history will not be retrieved from the git commit log.
 
 - **SUBTITLE**: The document subtitle.
 
 - **TITLE**: The document title.
-
-- **REPLACE_FILE**: The name of the replace file. This is a JSON file with key and value strings. Each key will be searched for in the markdown files and replaced with the value before conversion to PDF.
 
   Example content for a replace.json file:
 

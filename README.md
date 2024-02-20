@@ -159,20 +159,6 @@ The following are known issues:
 
   Default: **""**
 
-- **SkipGitCommitHistory**: Skip using git commit history.
-
-  When set to **true**, the change history will not be retrieved from the git commit log.
-
-  Default: **"false"**
-
-- **Subtitle**: The document subtitle.
-
-  Default: **""**
-
-- **Template**: The template name. Must be: designdoc.
-
-  Default: **"designdoc"**
-
 - **ReplaceFile**: The name of the replace file.
 
   This is a JSON file with key and value strings. Each key will be searched for in the markdown files and replaced with the value before conversion to PDF.
@@ -191,6 +177,20 @@ The following are known issues:
 - **RetentionDays**: Number of days to retain job artifacts.
 
   Default: **"5"**
+
+- **SkipGitCommitHistory**: Skip using git commit history.
+
+  When set to **true**, the change history will not be retrieved from the git commit log.
+
+  Default: **"false"**
+
+- **Subtitle**: The document subtitle.
+
+  Default: **""**
+
+- **Template**: The template name. Must be: designdoc.
+
+  Default: **"designdoc"**
 
 ### Usage
 
@@ -222,7 +222,7 @@ jobs:
           fetch-depth: 0
 
       - name: Build PDF
-        uses: innofactororg/markdown2pdf@v3
+        uses: innofactororg/markdown2pdf@v3.0.2beta1
         with:
           FirstChangeDescription: Initial draft
           Folder: docs/design
@@ -232,11 +232,11 @@ jobs:
           OrderFile: document.order
           OutFile: Design.pdf
           Project: 12345678
+          ReplaceFile: replace.json
+          RetentionDays: 5
           SkipGitCommitHistory: false
           Subtitle: DESIGN DOCUMENT
           Title: DNS
-          ReplaceFile: replace.json
-          RetentionDays: 5
 ```
 
 ## License

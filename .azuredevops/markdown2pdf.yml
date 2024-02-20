@@ -14,10 +14,10 @@ variables:
   ORDER_FILE: document.order
   OUT_FILE: document.pdf
   PROJECT:
+  REPLACE_FILE:
   SKIP_GIT_COMMIT_HISTORY: false
   SUBTITLE: Design Document
   TITLE: DNS
-  REPLACE_FILE:
   WORKFLOW_VERSION: v3.0.2beta1
 
 pool:
