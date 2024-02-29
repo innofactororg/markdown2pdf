@@ -105,17 +105,8 @@ runs:
         key: ${{ runner.os }}-texlive
         path: /opt/texlive
 
-    - name: Cache pip
-      uses: actions/cache@13aacd865c20de90d75de3b17ebe84f7a17d57d2 # v4.0.0
-      with:
-        key: ${{ runner.os }}-pip
-        path: ${{ runner.workspace }}/.pip
-
     - name: Install requirements
       shell: sh
-      env:
-        fonts_cache_dir: ${{ runner.workspace }}/fonts
-        pip_cache_dir: ${{ runner.workspace }}/.pip
       run: |
         echo "::group::Install requirements"
         install-tools.sh

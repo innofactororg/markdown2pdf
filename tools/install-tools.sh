@@ -34,7 +34,7 @@ if type apt-get > /dev/null 2>&1; then
       --write-out "%{response_code}" \
       --header 'Accept: application/vnd.github.raw' "${uri}"
     )
-    if [[ "${HTTP_CODE}" -lt 200 || "${HTTP_CODE}" -gt 299 ]]; then
+    if [ "${HTTP_CODE}" -lt 200 ] || [ "${HTTP_CODE}" -gt 299 ]; then
       echo "##[error]Unable to get ${uri}! Response code: ${HTTP_CODE}"
       exit 1
     fi

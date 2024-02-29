@@ -34,19 +34,11 @@ steps:
       key: 'texlive | "$(Agent.OS)"'
       path: /opt/texlive
 
-  - task: Cache@2
-    displayName: Cache pip
-    inputs:
-      key: 'pip | "$(Agent.OS)"'
-      path: $(Pipeline.Workspace)/.pip
-
   - task: Bash@3
     displayName: Install tools
     env:
       SCRIPT: install-tools
       VERSION: ${{ variables.WORKFLOW_VERSION }}
-      fonts_cache_dir: $(Pipeline.Workspace)/fonts
-      pip_cache_dir: $(Pipeline.Workspace)/.pip
     inputs:
       targetType: inline
       script: |
@@ -62,7 +54,7 @@ steps:
             --write-out "%{response_code}" \
             --header 'Accept: application/vnd.github.raw' "${uri}"
           )
-          if [[ "${HTTP_CODE}" -lt 200 || "${HTTP_CODE}" -gt 299 ]]; then
+          if [ "${HTTP_CODE}" -lt 200 ] || [ "${HTTP_CODE}" -gt 299 ]; then
             echo "##[error]Unable to get ${uri}! Response code: ${HTTP_CODE}"
             exit 1
           fi
@@ -95,7 +87,7 @@ steps:
             --write-out "%{response_code}" \
             --header 'Accept: application/vnd.github.raw' "${uri}"
           )
-          if [[ "${HTTP_CODE}" -lt 200 || "${HTTP_CODE}" -gt 299 ]]; then
+          if [ "${HTTP_CODE}" -lt 200 ] || [ "${HTTP_CODE}" -gt 299 ]; then
             echo "##[error]Unable to get ${uri}! Response code: ${HTTP_CODE}"
             exit 1
           fi
