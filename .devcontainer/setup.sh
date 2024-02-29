@@ -14,14 +14,15 @@ if ! [ -d ~/.ssh ]; then
   fi
 fi
 
-apk add --no-cache git wget jq librsvg font-noto-cjk zsh bash starship
-apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community font-carlito font-fira-code-nerd shellcheck
+apk add --no-cache bash font-noto-cjk starship zsh
+apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community font-fira-code-nerd shellcheck
+
+apk add --no-cache git curl jq librsvg
+apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community font-carlito
 
 pip install pre-commit
 
-tlmgr update --self
 tlmgr option -- autobackup -1
-tlmgr install lastpage
 
 if [ -f ~/.gitconfig ]; then
   rm ~/.gitconfig

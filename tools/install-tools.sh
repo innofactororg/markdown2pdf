@@ -14,9 +14,6 @@ if type apt-get > /dev/null 2>&1; then
   if ! type rsvg-convert > /dev/null 2>&1; then
     aptinstall librsvg2-bin
   fi
-  if ! test -f '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc'; then
-    aptinstall fonts-noto-cjk
-  fi
   if ! test -f '/usr/share/fonts/truetype/crosextra/Carlito-Regular.ttf'; then
     aptinstall fonts-crosextra-carlito
   fi
@@ -31,14 +28,14 @@ if type apt-get > /dev/null 2>&1; then
     sudo env "PATH=${PATH}" tlmgr path add
   else
     cd /tmp
-    url='https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz'
-    echo "Download ${url}"
-    HTTP_CODE=$(wget --tries=3 --server-response \
-      --no-check-certificate --quiet ${url} 2>&1 | \
-      awk '/^  HTTP/{print $2}' | tail -1 || true
+    uri='https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz'
+    echo "Download ${uri}"
+    HTTP_CODE=$(curl -sSL --remote-name --retry 4 \
+      --write-out "%{response_code}" \
+      --header 'Accept: application/vnd.github.raw' "${uri}"
     )
-    if [ "${HTTP_CODE}" -lt 200 ] || [ "${HTTP_CODE}" -gt 299 ]; then
-      echo "##[error]Unable to get install-tl-unx.tar.gz! Response code: ${HTTP_CODE}"
+    if [[ "${HTTP_CODE}" -lt 200 || "${HTTP_CODE}" -gt 299 ]]; then
+      echo "##[error]Unable to get ${uri}! Response code: ${HTTP_CODE}"
       exit 1
     fi
     zcat < install-tl-unx.tar.gz | tar xf -
@@ -65,8 +62,8 @@ elif type apk > /dev/null 2>&1; then
   if ! type git > /dev/null 2>&1; then
     apk add --no-cache git
   fi
-  if ! type wget > /dev/null 2>&1; then
-    apk add --no-cache wget
+  if ! type curl > /dev/null 2>&1; then
+    apk add --no-cache curl
   fi
   if ! type jq > /dev/null 2>&1; then
     apk add --no-cache jq
@@ -74,14 +71,12 @@ elif type apk > /dev/null 2>&1; then
   if ! type rsvg-convert > /dev/null 2>&1; then
     apk add --no-cache librsvg
   fi
-  if ! test -f '/usr/share/fonts/noto/NotoSansCJK-Regular.ttc'; then
-    apk add --no-cache font-noto-cjk
-  fi
   if ! test -f '/usr/share/fonts/carlito/Carlito-Regular.ttf'; then
     apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community font-carlito
   fi
   if type tlmgr > /dev/null 2>&1 && ! test -f '/opt/texlive/texdir/texmf-dist/tex/latex/lastpage/lastpage.sty'; then
     tlmgr update --self
+    tlmgr option -- autobackup -1
     tlmgr install lastpage
   else
     echo "Unable to find tlmgr in path: ${PATH}"

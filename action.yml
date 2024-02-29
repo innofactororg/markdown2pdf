@@ -77,6 +77,10 @@ inputs:
     required: false
     type: number
     default: 5
+outputs:
+  pdf:
+    description: The path to the PDF file.
+    value: ${{ github.workspace }}/${{ inputs.OutFile }}
 runs:
   using: composite
   steps:
@@ -95,12 +99,6 @@ runs:
         fi
         echo '::endgroup::'
 
-    - name: Cache Fonts
-      uses: actions/cache@13aacd865c20de90d75de3b17ebe84f7a17d57d2 # v4.0.0
-      with:
-        key: ${{ runner.os }}-fonts
-        path: /usr/share/fonts
-
     - name: Cache Tex Live
       uses: actions/cache@13aacd865c20de90d75de3b17ebe84f7a17d57d2 # v4.0.0
       with:
@@ -116,6 +114,7 @@ runs:
     - name: Install requirements
       shell: sh
       env:
+        fonts_cache_dir: ${{ runner.workspace }}/fonts
         pip_cache_dir: ${{ runner.workspace }}/.pip
       run: |
         echo "::group::Install requirements"

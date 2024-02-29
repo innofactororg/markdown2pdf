@@ -29,12 +29,6 @@ steps:
     fetchDepth: 0
 
   - task: Cache@2
-    displayName: Cache Fonts
-    inputs:
-      key: 'fonts | "$(Agent.OS)"'
-      path: /usr/share/fonts
-
-  - task: Cache@2
     displayName: Cache TeX Live
     inputs:
       key: 'texlive | "$(Agent.OS)"'
@@ -51,6 +45,7 @@ steps:
     env:
       SCRIPT: install-tools
       VERSION: ${{ variables.WORKFLOW_VERSION }}
+      fonts_cache_dir: $(Pipeline.Workspace)/fonts
       pip_cache_dir: $(Pipeline.Workspace)/.pip
     inputs:
       targetType: inline
@@ -62,14 +57,13 @@ steps:
           requirements.txt
         )
         for file in "${files[@]}"; do
-          url="https://github.com/innofactororg/markdown2pdf/raw/${VERSION}/tools/${file}"
-          echo "Download ${url}"
-          HTTP_CODE=$(wget --tries=3 --server-response \
-            --no-check-certificate --quiet ${url} 2>&1 | \
-            awk '/^  HTTP/{print $2}' | tail -1 || true
+          uri="https://github.com/innofactororg/markdown2pdf/raw/${VERSION}/tools/${file}"
+          HTTP_CODE=$(curl -sSL --remote-name --retry 4 \
+            --write-out "%{response_code}" \
+            --header 'Accept: application/vnd.github.raw' "${uri}"
           )
-          if [ "${HTTP_CODE}" -lt 200 ] || [ "${HTTP_CODE}" -gt 299 ]; then
-            echo "##[error]Unable to get ${file}! Response code: ${HTTP_CODE}"
+          if [[ "${HTTP_CODE}" -lt 200 || "${HTTP_CODE}" -gt 299 ]]; then
+            echo "##[error]Unable to get ${uri}! Response code: ${HTTP_CODE}"
             exit 1
           fi
         done
@@ -96,14 +90,13 @@ steps:
           designdoc-logo.png
         )
         for file in "${files[@]}"; do
-          url="https://github.com/innofactororg/markdown2pdf/raw/${VERSION}/tools/${file}"
-          echo "Download ${url}"
-          HTTP_CODE=$(wget --tries=3 --server-response \
-            --no-check-certificate --quiet ${url} 2>&1 | \
-            awk '/^  HTTP/{print $2}' | tail -1 || true
+          uri="https://github.com/innofactororg/markdown2pdf/raw/${VERSION}/tools/${file}"
+          HTTP_CODE=$(curl -sSL --remote-name --retry 4 \
+            --write-out "%{response_code}" \
+            --header 'Accept: application/vnd.github.raw' "${uri}"
           )
-          if [ "${HTTP_CODE}" -lt 200 ] || [ "${HTTP_CODE}" -gt 299 ]; then
-            echo "##[error]Unable to get ${file}! Response code: ${HTTP_CODE}"
+          if [[ "${HTTP_CODE}" -lt 200 || "${HTTP_CODE}" -gt 299 ]]; then
+            echo "##[error]Unable to get ${uri}! Response code: ${HTTP_CODE}"
             exit 1
           fi
         done

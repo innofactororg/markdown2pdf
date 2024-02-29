@@ -23,3 +23,6 @@ fi
 
 pre-commit install
 pre-commit autoupdate
+
+tlmgr update --self
+tlmgr install lastpage
