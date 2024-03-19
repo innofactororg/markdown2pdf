@@ -21,8 +21,7 @@ if [ "$(git config user.email)" = '' ]; then
   echo 'Warning: git user.email is not configured'
 fi
 
-pre-commit install
-pre-commit autoupdate
-
-tlmgr update --self
-tlmgr install lastpage
+if type pre-commit > /dev/null 2>&1; then
+  pre-commit install
+  pre-commit autoupdate
+fi

@@ -297,6 +297,7 @@ set_metadataContent() {
   metadataContent="$(cat)"
 }
 backslash='\'
+#  "footer-center": "Page (${backslash}${backslash}thepage ) of ${backslash}${backslash}pageref{LastPage}",
 set_metadataContent <<META_DATA || true
 {
   "author": [
@@ -307,7 +308,7 @@ set_metadataContent <<META_DATA || true
   "date": "${currentDate}",
   "disable-header-and-footer": false,
   "disclaimer": "This document contains business and trade secrets (essential information about Innofactor's business) and is therefore totally confidential. Confidentiality does not apply to pricing information",
-  "footer-center": "Page (${backslash}${backslash}thepage ) of ${backslash}${backslash}pageref{LastPage}",
+  "footer-center": "Page ${backslash}${backslash}thepage",
   "geometry":"a4paper,left=2.54cm,right=2.54cm,top=1.91cm,bottom=2.54cm",
   "links-as-notes": true,
   "listings-disable-line-numbers": false,

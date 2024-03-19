@@ -20,9 +20,8 @@ apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/commu
 apk add --no-cache git curl jq librsvg
 apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community font-carlito
 
+#pip install --break-system-packages pre-commit
 pip install pre-commit
-
-tlmgr option -- autobackup -1
 
 if [ -f ~/.gitconfig ]; then
   rm ~/.gitconfig

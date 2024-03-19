@@ -31,8 +31,7 @@ if type apt-get > /dev/null 2>&1; then
     uri='https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz'
     echo "Download ${uri}"
     HTTP_CODE=$(curl -sSL --remote-name --retry 4 \
-      --write-out "%{response_code}" \
-      --header 'Accept: application/vnd.github.raw' "${uri}"
+      --write-out "%{response_code}" "${uri}"
     )
     if [ "${HTTP_CODE}" -lt 200 ] || [ "${HTTP_CODE}" -gt 299 ]; then
       echo "##[error]Unable to get ${uri}! Response code: ${HTTP_CODE}"
@@ -74,14 +73,14 @@ elif type apk > /dev/null 2>&1; then
   if ! test -f '/usr/share/fonts/carlito/Carlito-Regular.ttf'; then
     apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community font-carlito
   fi
-  if type tlmgr > /dev/null 2>&1 && ! test -f '/opt/texlive/texdir/texmf-dist/tex/latex/lastpage/lastpage.sty'; then
-    tlmgr update --self
-    tlmgr option -- autobackup -1
-    tlmgr install lastpage
-  else
-    echo "Unable to find tlmgr in path: ${PATH}"
-    exit 1
-  fi
+#  if type tlmgr > /dev/null 2>&1 && ! test -f '/opt/texlive/texdir/texmf-dist/tex/latex/lastpage/lastpage.sty'; then
+#    tlmgr update --self
+#    tlmgr option -- autobackup -1
+#    tlmgr install lastpage
+#  else
+#    echo "Unable to find tlmgr in path: ${PATH}"
+#    exit 1
+#  fi
 else
   echo 'Unable to find apt-get or apk!'
   exit 1
