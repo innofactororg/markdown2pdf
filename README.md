@@ -222,7 +222,7 @@ jobs:
           fetch-depth: 0
 
       - name: Build PDF
-        uses: innofactororg/markdown2pdf@v3.0.2beta1
+        uses: innofactororg/markdown2pdf@v3
         with:
           FirstChangeDescription: Initial draft
           Folder: docs/design
