@@ -1,25 +1,22 @@
 #!/usr/bin/env sh
-set -Eeuo pipefail
-trap 'error_handler $LINENO "$SCRIPT_COMMAND" $?' ERR 1 2 3 6
+# shellcheck disable=SC3043
+set -e
 trap cleanup EXIT
-error_handler() {
-  error $1 "${2}" $3
-}
 cleanup() {
-  if [ -f "$DocsPath/metadata.json" ]; then
-    rm -f -- "$DocsPath/metadata.json"
+  if test -f "${DocsPath}/metadata.json"; then
+    rm -f "${DocsPath}/metadata.json"
   fi
 }
 error() {
-  local line="$1"
-  local message="$2"
+  local line="${1}"
+  local message="${2}"
   if [ $# -gt 2 ]; then
-    local code=$3
+    local code="${3}"
   else
     local code=-1
   fi
   local line_message=""
-  if [ "$line" != "" ]; then
+  if [ "$line" != '' ]; then
     line_message=" on or near line ${line}"
   fi
   if test -n "${message}"; then
@@ -28,7 +25,7 @@ error() {
     message="Unspecified (exit code ${code})"
   fi
   command printf '\033[1;31mError%s\033[0m: %s\n' "${line_message}" "${message}" 1>&2
-  exit ${code}
+  exit "${code}"
 }
 warning() {
   command printf '\033[1;33mWarning\033[0m: %s\n' "$1" 1>&2
@@ -42,7 +39,7 @@ info() {
   fi
 }
 test_arg() {
-  if [ $# -lt 4 ] || [ -z "${4}" ] || echo "${4}" | grep -Eq '^-.*'; then
+  if [ $# -lt 4 ] || test -z "${4}" || echo "${4}" | grep -Eq '^-.*'; then
     if [ "${1}" = 'true' ]; then
       echo "${2}"
     else
@@ -58,64 +55,80 @@ test_true_false() {
   else
     local default='false'
   fi
-  local value=$(echo ${1} | awk '{ print tolower($0) }')
-  if [ -z "${value}" ]; then
+  local value
+  value="$(echo "${1}" | awk '{ print tolower($0) }')"
+  if test -z "${value}"; then
     echo "${default}"
-  elif [ "${value}" = 'true' ] || [ "${value}" = 'yes' ] || [ "${value}" == '1' ]; then
+  elif [ "${value}" = 'true' ] || [ "${value}" = 'yes' ] || [ "${value}" = '1' ]; then
     echo 'true'
-  elif [ "${value}" = 'false' ] || [ "${value}" = 'no' ] || [ "${value}" == '0' ]; then
+  elif [ "${value}" = 'false' ] || [ "${value}" = 'no' ] || [ "${value}" = '0' ]; then
     echo 'false'
   else
     echo "${default}"
   fi
 }
 get_file_path() {
-  if [ -z "${1}" ]; then
+  if test -z "${1}"; then
     echo ''
-  elif [ -e ${1} ]; then
-    echo $(readlink -f "${1}")
-  elif [ -e ${2}/${1} ]; then
-    echo $(readlink -f ${2}/${1})
+  elif test -e "${1}"; then
+    readlink -f "${1}"
+  elif test -e "${2}/${1}"; then
+    readlink -f "${2}/${1}"
   else
     echo ''
   fi
 }
 get_version_history() {
-  if [ -n "${historyFilePath}" ]; then
-    if ! [ -f "${historyFilePath}" ]; then
+  if test -n "${historyFilePath}"; then
+    if ! test -f "${historyFilePath}"; then
       error '' "Unable to find history file ${historyFilePath}" 1
     fi
-    mergeLogs=$(cat -- ${historyFilePath})
+    mergeLogs=$(cat "${historyFilePath}")
   elif [ "${SkipGitCommitHistory}" = 'true' ]; then
-    mergeLogs=$(echo "tag: rel/repo/1.0.0|$currentDate|$MainAuthor|$FirstChangeDescription")
+    mergeLogs="tag: rel/repo/1.0.0|${currentDate}|${MainAuthor}|${FirstChangeDescription}"
   else
-    mergeLogs=$(git --no-pager log -$GitLogLimit --date-order --date=format:'%b %e, %Y' --no-merges --oneline --pretty=format:'%D|%ad|%an|%s' -- $DocsPath)
+    mergeLogs=$(
+      git --no-pager log "-${GitLogLimit}" --date-order --date=format:'%b %e, %Y' \
+        --no-merges --oneline --pretty=format:'%D|%ad|%an|%s' "${DocsPath}"
+    )
   fi
-  if [ -z "$mergeLogs" ]; then
-    mergeLogs=$(echo "tag: rel/repo/1.0.0|$currentDate|$MainAuthor|$FirstChangeDescription")
+  if test -z "${mergeLogs}"; then
+    mergeLogs="tag: rel/repo/1.0.0|${currentDate}|${MainAuthor}|${FirstChangeDescription}"
   fi
-  lineCount=$(echo "$mergeLogs" | wc -l)
+  lineCount=$(echo "${mergeLogs}" | wc -l)
   historyJson='[]'
-  while IFS= read -r line; do
+  printf '%s\n' "${mergeLogs}" | while read -r line; do
     lineCount=$((lineCount-1))
     version="$(echo "$line" | cut -d'|' -f1 | rev | cut -d'/' -f1 | rev)"
-    if [ -z "$version" ] || ! echo $version | grep -Eq '^[0-9].*'; then
-      version="1.0.$lineCount"
+    if test -z "${version}" || ! echo "${version}" | grep -Eq '^[0-9].*'; then
+      version="1.0.${lineCount}"
     fi
-    date="$(echo "$line" | cut -d'|' -f2)"
-    author="$(echo "$line" | cut -d'|' -f3)"
-    description="$(echo "$line" | cut -d'|' -f4)"
-    historyJson=$(echo "$historyJson" | jq --arg version "$version" \
-      --arg date "$date" \
-      --arg author "$author" \
-      --arg description "$description" \
-      '. +=[{ version: $version, date: $date, author: $author, description: $description }]')
-  done < <(echo "$mergeLogs")
-  echo "$historyJson"
+    date="$(echo "${line}" | cut -d'|' -f2)"
+    author="$(echo "${line}" | cut -d'|' -f3)"
+    description="$(echo "${line}" | cut -d'|' -f4)"
+    if test -f tmp_history_41231.json; then
+      historyJson=$(jq '.' tmp_history_41231.json)
+    fi
+    printf '%s\n' "${historyJson}" | jq --arg version "${version}" \
+      --arg date "${date}" \
+      --arg author "${author}" \
+      --arg description "${description}" \
+      '. +=[{ version: $version, date: $date, author: $author, description: $description }]' > tmp_history_41231.json
+  done
+  if test -f tmp_history_41231.json; then
+    jq '.' tmp_history_41231.json
+  else
+    printf '%s\n' '[]' | jq --arg version '1.0.0' \
+        --arg date "${currentDate}" \
+        --arg author "${MainAuthor}" \
+        --arg description "${FirstChangeDescription}" \
+        '. +=[{ version: $version, date: $date, author: $author, description: $description }]' > tmp_history_41231.json
+    jq '.' tmp_history_41231.json
+  fi
+  rm -f tmp_history_41231.json
 }
 process_params() {
-  while [ $# -gt 0 ]
-  do
+  while [ $# -gt 0 ]; do
     local arg="$1"
     case "$arg" in
       -a|--author)
@@ -195,61 +208,58 @@ ReplaceFile=''
 Subtitle=''
 Template='designdoc'
 Title=''
-SCRIPT_COMMAND="$@"
 process_params "$@"
-if [ -z "${Title}" ]; then
+if test -z "${Title}"; then
   error '' 'Missing Title: Value not set for argument --title' 1
 fi
 currentDate=$(date "+%B %d, %Y")
 currentPath=$(pwd)
 # Ensure OutFile has full path
-if ! echo "$OutFile" | grep -Eq '^[a-zA-Z]:\\.*' && ! echo "$OutFile" | grep -Eq '^/.*'; then
+if ! echo "${OutFile}" | grep -Eq '^[a-zA-Z]:\\.*' && ! echo "${OutFile}" | grep -Eq '^/.*'; then
   OutFile="${currentPath}/${OutFile}"
 fi
-if ! echo "$DocsPath" | grep -Eq '^[a-zA-Z]:\\.*' && ! echo "$DocsPath" | grep -Eq '^/.*'; then
+if ! echo "${DocsPath}" | grep -Eq '^[a-zA-Z]:\\.*' && ! echo "${DocsPath}" | grep -Eq '^/.*'; then
   DocsPath="${currentPath}/${DocsPath}"
 fi
-if ! [ -d "${DocsPath}" ]; then
+if ! test -d "${DocsPath}"; then
   error '' "Unable to find folder ${DocsPath}" 1
 fi
-scriptPath=$(dirname -- $(readlink -f "$0"))
+scriptPath="$(dirname "$(readlink -f "$0")")"
 # Get path to docs files in the same folder as the docs
-historyFilePath=$(get_file_path "$HistoryFile" $DocsPath)
-orderFilePath=$(get_file_path "$OrderFile" $DocsPath)
-if ! [ -f "${orderFilePath}" ]; then
+historyFilePath=$(get_file_path "${HistoryFile}" "${DocsPath}")
+orderFilePath=$(get_file_path "${OrderFile}" "${DocsPath}")
+if ! test -f "${orderFilePath}"; then
   error '' "Unable to find order file ${orderFilePath}" 1
 fi
-replaceFilePath=$(get_file_path "$ReplaceFile" $DocsPath)
+replaceFilePath=$(get_file_path "${ReplaceFile}" "${DocsPath}")
 # Get path to template files in the same folder as the script
-templateFilePath=$(get_file_path "${Template}.tex" $scriptPath)
-if ! [ -f "${templateFilePath}" ]; then
+templateFilePath=$(get_file_path "${Template}.tex" "${scriptPath}")
+if ! test -f "${templateFilePath}"; then
   error '' "Unable to find template file ${templateFilePath}" 1
 fi
-templateCoverFilePath=$(get_file_path "${Template}-cover.png" $scriptPath)
-if ! [ -f "${templateCoverFilePath}" ]; then
+templateCoverFilePath=$(get_file_path "${Template}-cover.png" "${scriptPath}")
+if ! test -f "${templateCoverFilePath}"; then
   error '' "Unable to find template cover file ${templateCoverFilePath}" 1
 fi
-templateLogoFilePath=$(get_file_path "${Template}-logo.png" $scriptPath)
-if ! [ -f "${templateLogoFilePath}" ]; then
+templateLogoFilePath=$(get_file_path "${Template}-logo.png" "${scriptPath}")
+if ! test -f "${templateLogoFilePath}"; then
   error '' "Unable to find template logo file ${templateLogoFilePath}" 1
 fi
 info 'Get version history'
 versionHistory=$(get_version_history)
-newLine='
-'
-if [ "${OutFile: -3}" = '.md' ]; then
+if [ "$(printf '%s' "${OutFile}" | tail -c 3)" = '.md' ]; then
   mdOutFile="${OutFile}"
 else
   mdOutFile="${OutFile}.md"
 fi
 info "Merge markdown files in ${orderFilePath}"
-printf '%s\n' "$(cat -- "${orderFilePath}")" | while read line; do
-  if test -n "${line}" && ! [ "${line:0:1}" = '#' ]; then
+printf '%s\n' "$(cat "${orderFilePath}")" | while read -r line; do
+  if test -n "${line}" && ! [ "$(printf '%s' "$line" | cut -c 1)" = '#' ]; then
     if ! test -f "${DocsPath}/${line}"; then
       error '' "Unable to find markdown file ${DocsPath}/${line}" 1
     fi
-    mdFile=$(readlink -f -- "${DocsPath}/${line}")
-    mdPath=$(dirname -- $mdFile)
+    mdFile="$(readlink -f "${DocsPath}/${line}")"
+    mdPath="$(dirname "$mdFile")"
     tmpContent=$(
       printf '%s' "$(sed -e "s|\(\[.*\](\)\(\../\)\(.*)\)|\1${mdPath}/\2\3|g" "${mdFile}" | sed -e "s|\(\[.*\](\)\(\./\)\(.*)\)|\1${mdPath}/\3|g" | sed -e "s|\(\[.*\](\)\(asset\)\(.*)\)|\1${mdPath}/\2\3|g" | sed -e "s|\(\[.*\](\)\(attach\)\(.*)\)|\1${mdPath}/\2\3|g" | sed -e "s|\(\[.*\](\)\(image\)\(.*)\)|\1${mdPath}/\2\3|g" | sed -e "s|\(\[.*\](\)\(\.\)\(.*)\)|\1${mdPath}/\2\3|g")"
     )
@@ -262,7 +272,7 @@ printf '%s\n' "$(cat -- "${orderFilePath}")" | while read line; do
       fi
     fi
   else
-    info "Ignore $line"
+    info "Ignore ${line}"
   fi
 done
 info 'Done merging markdown files'
@@ -271,28 +281,34 @@ if ! test -f "${mdOutFile}"; then
   exit 1
 fi
 mdContent=$(cat "${mdOutFile}")
-if [ -n "${ReplaceFile}" ]; then
-  if ! [ -f "${replaceFilePath}" ]; then
+if test -n "${ReplaceFile}"; then
+  if ! test -f "${replaceFilePath}"; then
     error '' "Unable to find replace file ${replaceFilePath}" 1
   fi
   info 'Perform replace in markdown'
-  while IFS=$'\t' read -r key value; do
-    mdContent=$(echo "${mdContent}" | sed -e "s/${key}/${value}/g")
-  done < <(jq -r 'to_entries[] | [.key, .value] | @tsv' $replaceFilePath)
-  echo "${mdContent}" > "${mdOutFile}"
+  tab_values=$(jq -r 'to_entries[] | [.key, .value] | @tsv' "${replaceFilePath}")
+  printf '%s\n' "${tab_values}" | while IFS="$(printf '\t')" read -r key value; do
+    printf '%s\n' "${mdContent}" | sed -e "s/${key}/${value}/g" > "${mdOutFile}"
+  done
+  mdContent="$(cat "${mdOutFile}")"
 fi
 authors=$(echo "${versionHistory}" | jq '.[].author' | uniq | sed ':a; N; $!ba; s/\n/,/g')
-IFS= read -r -d '' metadataContent <<META_DATA || true
+set_metadataContent() {
+  metadataContent="$(cat)"
+}
+backslash='\'
+#  "footer-center": "Page (${backslash}${backslash}thepage ) of ${backslash}${backslash}pageref{LastPage}",
+set_metadataContent <<META_DATA || true
 {
   "author": [
-    $authors
+    ${authors}
   ],
   "block-headings": true,
   "colorlinks": true,
   "date": "${currentDate}",
   "disable-header-and-footer": false,
   "disclaimer": "This document contains business and trade secrets (essential information about Innofactor's business) and is therefore totally confidential. Confidentiality does not apply to pricing information",
-  "footer-center": "Page (\\\thepage ) of \\\pageref{LastPage}",
+  "footer-center": "Page ${backslash}${backslash}thepage",
   "geometry":"a4paper,left=2.54cm,right=2.54cm,top=1.91cm,bottom=2.54cm",
   "links-as-notes": true,
   "listings-disable-line-numbers": false,
@@ -320,17 +336,17 @@ IFS= read -r -d '' metadataContent <<META_DATA || true
   "toc": true,
   "toc-own-page": true,
   "toc-title": "Table of Contents",
-  "version-history": $versionHistory
+  "version-history": ${versionHistory}
 }
 META_DATA
-echo "${metadataContent}" | jq '.' > "${DocsPath}/metadata.json"
 if test -n "${mdContent}"; then
   info "The markdown contains ${#mdContent} characters"
-  info "Create ${OutFile} using metadata:"
-  echo "${metadataContent}" | jq '.'
-  if ! [ "${OutFile: -3}" = '.md' ]; then
+  if ! [ "$(printf '%s' "${OutFile}" | tail -c 3)" = '.md' ]; then
+    info "Create ${OutFile} using metadata:"
+    printf '%s\n' "${metadataContent}"
+    printf '%s\n' "${metadataContent}" | jq '.' > "${DocsPath}/metadata.json"
     # We need to be in the docs path so image paths can be relative
-    cd $DocsPath
+    cd "${DocsPath}"
     echo "${mdContent}" | pandoc \
       --standalone \
       --listings \
@@ -340,12 +356,12 @@ if test -n "${mdContent}"; then
       --template="${templateFilePath}" \
       --filter pandoc-latex-environment \
       --output="${OutFile}"
-    cd $currentPath
+    cd "${currentPath}"
   fi
-  if [ ! -f $OutFile ]; then
+  if ! test -f "${OutFile}"; then
     warning "Unable to create ${OutFile}"
   else
-    size=$(expr $(stat -c '%s' $OutFile) / 1000)
+    size=$(($(stat -c '%s' "${OutFile}") / 1000))
     info "Created ${OutFile} using ${size} KB"
   fi
 fi

@@ -1,4 +1,5 @@
 #!/usr/bin/env sh
+# shellcheck disable=SC2016
 if [ -d "/var/run/docker.sock" ]; then
   # Grant access to the docker socket
   sudo chmod 666 /var/run/docker.sock
@@ -8,19 +9,19 @@ if ! [ -d ~/.ssh ]; then
   if [ -d /tmp/.ssh-localhost ]; then
     command mkdir -p -- ~/.ssh
     sudo cp -R /tmp/.ssh-localhost/* ~/.ssh
-    sudo chown -R $(whoami):$(whoami) ~ || true ?>/dev/null
-    sudo chmod 400 ~/.ssh/*
+    sudo chown -R -- "$(whoami):$(whoami)" ~ || true -- ?>/dev/null
+    sudo chmod 400 -- ~/.ssh/*
   fi
 fi
 
-apk add --no-cache git curl jq librsvg font-noto-cjk zsh bash starship
-apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community font-carlito font-fira-code-nerd shellcheck
+apk add --no-cache bash font-noto-cjk starship zsh
+apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community font-fira-code-nerd shellcheck
 
+apk add --no-cache git curl jq librsvg
+apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community font-carlito
+
+#pip install --break-system-packages pre-commit
 pip install pre-commit
-
-tlmgr update --self
-tlmgr option -- autobackup -1
-tlmgr install lastpage
 
 if [ -f ~/.gitconfig ]; then
   rm ~/.gitconfig
