@@ -1,6 +1,6 @@
 {
   "name": "markdown2pdf",
-  "image": "pandoc/extra:edge-alpine",
+  "image": "ghcr.io/innofactororg/pandoc-extra:3.1.12-alpine",
   "onCreateCommand": ".devcontainer/setup.sh",
   "postStartCommand": ".devcontainer/startup.sh",
   "overrideCommand": true,

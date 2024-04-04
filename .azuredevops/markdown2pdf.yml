@@ -17,50 +17,18 @@ variables:
   REPLACE_FILE:
   SKIP_GIT_COMMIT_HISTORY: false
   SUBTITLE: Design Document
-  TITLE: DNS
-  WORKFLOW_VERSION: v3
+  TITLE: Draft
+  WORKFLOW_VERSION: v4
 
 pool:
   vmImage: ubuntu-22.04
+
+container: ghcr.io/innofactororg/pandoc-extra:3.1.12-alpine
 
 steps:
   - checkout: self
     displayName: Checkout
     fetchDepth: 0
-
-  - task: Cache@2
-    displayName: Cache TeX Live
-    inputs:
-      key: 'texlive | "$(Agent.OS)"'
-      path: /opt/texlive
-
-  - task: Bash@3
-    displayName: Install tools
-    env:
-      SCRIPT: install-tools
-      VERSION: ${{ variables.WORKFLOW_VERSION }}
-    inputs:
-      targetType: inline
-      script: |
-        files=(
-          "${SCRIPT}.sh"
-          texlive.profile
-          texlive_packages.txt
-          requirements.txt
-        )
-        for file in "${files[@]}"; do
-          uri="https://github.com/innofactororg/markdown2pdf/raw/${VERSION}/tools/${file}"
-          HTTP_CODE=$(curl -sSL --remote-name --retry 4 \
-            --write-out "%{response_code}" \
-            --header 'Accept: application/vnd.github.raw' "${uri}"
-          )
-          if [ "${HTTP_CODE}" -lt 200 ] || [ "${HTTP_CODE}" -gt 299 ]; then
-            echo "##[error]Unable to get ${uri}! Response code: ${HTTP_CODE}"
-            exit 1
-          fi
-        done
-        chmod +x "${SCRIPT}.sh"
-        ./"${SCRIPT}.sh"
 
   - task: Bash@3
     displayName: Build PDF

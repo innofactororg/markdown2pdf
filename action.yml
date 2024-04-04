@@ -77,12 +77,10 @@ inputs:
     required: false
     type: number
     default: 5
-outputs:
-  pdf:
-    description: The path to the PDF file.
-    value: ${{ github.workspace }}/${{ inputs.OutFile }}
 runs:
-  using: composite
+  using: docker
+  image: docker://ghcr.io/innofactororg/pandoc-extra:3.1.12-alpine
+  entrypoint: sh
   steps:
     - name: Add tools to system path
       shell: sh
@@ -92,24 +90,6 @@ runs:
         echo 'Tools folder:'
         echo "${toolsFolder}"
         echo "${toolsFolder}" >> "${GITHUB_PATH}"
-        echo 'System path:'
-        echo "${PATH}"
-        if test -f "${GITHUB_ACTION_PATH}/tools/requirements.txt"; then
-          cp -f "${GITHUB_ACTION_PATH}/tools/requirements.txt" ./
-        fi
-        echo '::endgroup::'
-
-    - name: Cache Tex Live
-      uses: actions/cache@13aacd865c20de90d75de3b17ebe84f7a17d57d2 # v4.0.0
-      with:
-        key: ${{ runner.os }}-texlive
-        path: /opt/texlive
-
-    - name: Install requirements
-      shell: sh
-      run: |
-        echo "::group::Install requirements"
-        install-tools.sh
         echo '::endgroup::'
 
     - name: Build PDF
@@ -160,7 +140,7 @@ runs:
           console.log('::77e6a57ef9854574::');
           console.log('::endgroup::');
 
-    - name: Publish PDF
+    - name: Upload PDF artifact
       uses: actions/upload-artifact@ef09cdac3e2d3e60d8ccadda691f4f1cec5035cb #v4.3.1 + 3 commits
       with:
         if-no-files-found: error
