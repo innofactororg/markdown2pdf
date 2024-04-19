@@ -280,18 +280,15 @@ if ! test -f "${mdOutFile}"; then
   warning 'Unable to merge markdown files, no content found!'
   exit 1
 fi
-mdContent=$(cat "${mdOutFile}")
-if test -n "${ReplaceFile}"; then
-  if ! test -f "${replaceFilePath}"; then
-    error '' "Unable to find replace file ${replaceFilePath}" 1
-  fi
-  info 'Perform replace in markdown'
-  tab_values=$(jq -r 'to_entries[] | [.key, .value] | @tsv' "${replaceFilePath}")
-  printf '%s\n' "${tab_values}" | while IFS="$(printf '\t')" read -r key value; do
-    printf '%s\n' "${mdContent}" | sed -e "s/${key}/${value}/g" > "${mdOutFile}"
-  done
-  mdContent="$(cat "${mdOutFile}")"
+
+if [ -f "$replaceFilePath" ]; then
+  while IFS="=" read -r key value; do
+    sed -i -e "s|${key}|${value}|g" $mdOutFile
+  done < <(jq -r 'to_entries|map("\(.key)=\(.value|tostring)")|.[]' $replaceFilePath)
 fi
+
+mdContent=$(cat "${mdOutFile}")
+
 authors=$(echo "${versionHistory}" | jq '.[].author' | uniq | sed ':a; N; $!ba; s/\n/,/g')
 set_metadataContent() {
   metadataContent="$(cat)"
