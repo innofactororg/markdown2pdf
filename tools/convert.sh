@@ -282,9 +282,8 @@ if ! test -f "${mdOutFile}"; then
 fi
 
 if [ -f "$replaceFilePath" ]; then
-  while IFS="=" read -r key value; do
-    sed -i -e "s|${key}|${value}|g" $mdOutFile
-  done < <(jq -r 'to_entries|map("\(.key)=\(.value|tostring)")|.[]' $replaceFilePath)
+  jq -r 'to_entries | map("\(.key)/\(.value|tostring)") | .[]' "$replaceFilePath" |
+    xargs -I {} sed -i 's/{}/g' "$mdOutFile"
 fi
 
 mdContent=$(cat "${mdOutFile}")
