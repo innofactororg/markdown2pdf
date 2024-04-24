@@ -281,7 +281,9 @@ if ! test -f "${mdOutFile}"; then
   exit 1
 fi
 
-if [ -f "$replaceFilePath" ]; then
+if [ ! -f "$replaceFilePath" ]; then
+  error '' "Unable to find replace file $replaceFilePath" 1
+else
   jq -r 'to_entries | map("\(.key)/\(.value|tostring)") | .[]' "$replaceFilePath" |
     xargs -I {} sed -i 's/{}/g' "$mdOutFile"
 fi
