@@ -214,7 +214,7 @@ jobs:
       contents: read # for checkout
     runs-on: ubuntu-22.04
     container:
-      image: pandoc/extra:edge-alpine
+      image: pandoc/extra:3.1.1-alpine
     steps:
       - name: Clone repository
         uses: actions/checkout@v4
