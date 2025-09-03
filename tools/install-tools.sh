@@ -57,7 +57,17 @@ if type apt-get > /dev/null 2>&1; then
   fi
   TLREQ=$(readlink -f "${scriptPath}/requirements.txt")
   sudo env "PATH=${PATH}" pip3 --no-cache-dir install -r "${TLREQ}"
+  # Install Mermaid CLI (mmdc) for Mermaid diagram rendering
+  if ! type npm > /dev/null 2>&1; then
+    aptinstall npm
+  fi
+  sudo npm install -g @mermaid-js/mermaid-cli
 elif type apk > /dev/null 2>&1; then
+  # Install Mermaid CLI (mmdc) for Mermaid diagram rendering
+  if ! type npm > /dev/null 2>&1; then
+    apk add --no-cache nodejs npm
+  fi
+  npm install -g @mermaid-js/mermaid-cli
   if ! type git > /dev/null 2>&1; then
     apk add --no-cache git
   fi

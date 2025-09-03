@@ -290,7 +290,44 @@ if test -n "${ReplaceFile}"; then
   fi
 fi
 
-mdContent=$(cat "${mdOutFile}")
+
+# Pre-process: Convert Mermaid code blocks to images and replace with image links
+mermaid_img_dir="${DocsPath}/mermaid-imgs"
+mkdir -p "$mermaid_img_dir"
+
+# Use awk to extract and replace mermaid code blocks
+awk_script='BEGIN{inblock=0;imgidx=0;}
+{
+  if ($0 ~ /^```mermaid[[:space:]]*$/) {
+    inblock=1;
+    imgfile=sprintf("MERMAID_PLACEHOLDER_%d", ++imgidx);
+    print imgfile > "/tmp/mermaid_imglist.txt";
+    code="";
+    next;
+  }
+  if (inblock && $0 ~ /^```[[:space:]]*$/) {
+    inblock=0;
+    print "![](mermaid-imgs/" imgfile ".svg)";
+    print code > "/tmp/mermaid_" imgfile ".mmd";
+    next;
+  }
+  if (inblock) {
+    code = code $0 "\n";
+    next;
+  }
+  print;
+}'
+
+awk "$awk_script" "${mdOutFile}" > "${mdOutFile}.with_mermaid"
+
+# Render all Mermaid diagrams
+if [ -f /tmp/mermaid_imglist.txt ]; then
+  while read -r imgfile; do
+    mmdc -i "/tmp/mermaid_${imgfile}.mmd" -o "$mermaid_img_dir/${imgfile}.svg" || echo "Warning: Failed to render $imgfile"
+  done < /tmp/mermaid_imglist.txt
+fi
+
+mdContent=$(cat "${mdOutFile}.with_mermaid")
 
 authors=$(echo "${versionHistory}" | jq '.[].author' | uniq | sed ':a; N; $!ba; s/\n/,/g')
 set_metadataContent() {
@@ -358,6 +395,8 @@ if test -n "${mdContent}"; then
       --output="${OutFile}"
     cd "${currentPath}"
   fi
+  # Clean up temp files
+  rm -f /tmp/mermaid_imglist.txt /tmp/mermaid_*.mmd
   if ! test -f "${OutFile}"; then
     warning "Unable to create ${OutFile}"
   else
