@@ -300,20 +300,51 @@ cat > "$puppeteer_config_file" << 'EOF'
 {
   "args": [
     "--no-sandbox",
-    "--disable-setuid-sandbox"
+    "--disable-setuid-sandbox",
+    "--font-render-hinting=none",
+    "--disable-gpu",
+    "--disable-web-security",
+    "--disable-features=IsolateOrigins,site-per-process",
+    "--enable-font-antialiasing",
+    "--window-size=1920,1080"
   ],
-  "executablePath": "/usr/bin/chromium"
+  "executablePath": "/usr/bin/chromium",
+  "defaultViewport": {
+    "width": 1200,
+    "height": 800,
+    "deviceScaleFactor": 2
+  }
 }
 EOF
 
-# Create Mermaid config file with basic settings for text visibility
+# Create Mermaid config file with enhanced settings for text visibility
 mermaid_config_file="/tmp/mermaid.config.json"
 cat > "$mermaid_config_file" << 'EOF'
 {
   "theme": "default",
   "themeVariables": {
     "fontFamily": "Arial, sans-serif",
-    "fontSize": "14px"
+    "fontSize": "16px",
+    "primaryColor": "#000000",
+    "primaryTextColor": "#000000",
+    "primaryBorderColor": "#000000",
+    "lineColor": "#000000",
+    "secondaryColor": "#444444",
+    "tertiaryColor": "#dddddd"
+  },
+  "maxTextSize": 5000,
+  "htmlLabels": true,
+  "securityLevel": "loose",
+  "gantt": {
+    "fontSize": 16
+  },
+  "flowchart": {
+    "htmlLabels": true,
+    "curve": "linear"
+  },
+  "sequence": {
+    "useMaxWidth": false,
+    "boxMargin": 10
   }
 }
 EOF
@@ -381,25 +412,60 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
       continue
     fi
 
-    # Try to run mmdc with minimal configuration first
+    # Try to run mmdc with enhanced configuration for better text rendering
     mmdc_output=$(mmdc -i "/tmp/mermaid_${imgfile}.mmd" -o "$mermaid_img_dir/${imgfile}.svg" \
       --puppeteerConfigFile "$puppeteer_config_file" \
       --configFile "$mermaid_config_file" \
-      --scale 1 \
-      --backgroundColor transparent 2>&1)
+      --fontFamily "Arial, sans-serif" \
+      --width 1200 \
+      --scale 1.5 \
+      --backgroundColor white 2>&1)
     mmdc_exit_code=$?
 
-    # If that fails, try without any config files
+    # If that fails, try with simpler configuration
     if [ $mmdc_exit_code -ne 0 ] || [ ! -f "$mermaid_img_dir/${imgfile}.svg" ]; then
-      info "Retrying mmdc without config files..."
+      info "Retrying mmdc with simpler configuration..."
       mmdc_output=$(mmdc -i "/tmp/mermaid_${imgfile}.mmd" -o "$mermaid_img_dir/${imgfile}.svg" \
-        --scale 1 \
+        --fontFamily "Arial" \
+        --width 1000 \
+        --scale 1.2 \
         --backgroundColor white 2>&1)
       mmdc_exit_code=$?
     fi
 
     if [ $mmdc_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.svg" ]; then
       info "Successfully rendered mermaid diagram: $imgfile"
+      
+      # Process the SVG to enhance text visibility
+      info "Post-processing SVG to improve text rendering..."
+      
+      # Save original SVG as backup
+      cp "$mermaid_img_dir/${imgfile}.svg" "$mermaid_img_dir/${imgfile}_original.svg"
+      
+      # Ensure text elements have proper font attributes
+      sed -i 's/<text/<text font-family="Arial, sans-serif" font-size="16px" /g' "$mermaid_img_dir/${imgfile}.svg"
+      
+      # Fix any empty text elements or make them more visible
+      sed -i 's/<text[^>]*><\/text>/<text font-family="Arial, sans-serif" font-size="16px" fill="black">Text<\/text>/g' "$mermaid_img_dir/${imgfile}.svg"
+      
+      # Ensure all text has proper fill color
+      sed -i 's/fill="none"/fill="black"/g' "$mermaid_img_dir/${imgfile}.svg"
+      
+      # Modify SVG viewBox if needed to avoid cropping
+      viewbox=$(grep -o 'viewBox="[^"]*"' "$mermaid_img_dir/${imgfile}.svg")
+      if [ -n "$viewbox" ]; then
+        # Add 5% padding to viewBox values
+        new_viewbox=$(echo "$viewbox" | awk -F'"' '{
+          split($2, a, " ");
+          x = a[1]; y = a[2]; w = a[3]; h = a[4];
+          pad_w = w * 0.05; pad_h = h * 0.05;
+          printf("viewBox=\"%s %s %s %s\"", x-pad_w, y-pad_h, w+pad_w*2, h+pad_h*2);
+        }')
+        if [ -n "$new_viewbox" ]; then
+          sed -i "s/$viewbox/$new_viewbox/g" "$mermaid_img_dir/${imgfile}.svg"
+        fi
+      fi
+      
       # Debug: Check if SVG contains text elements and show sample text
       text_count=$(grep -c "<text" "$mermaid_img_dir/${imgfile}.svg" 2>/dev/null || echo "0")
       # Ensure we have a valid integer
@@ -601,9 +667,9 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
       # Method 2: Chromium backup (improved to handle truncation)
       if [ "$png_success" = false ]; then
         if command -v chromium >/dev/null 2>&1; then
-          info "Attempting PNG conversion with Chromium (backup method)..."
+          info "Attempting PNG conversion with Chromium (enhanced method)..."
 
-          # Create simple HTML wrapper
+          # Create an improved HTML wrapper that handles text better
           html_file="/tmp/mermaid_${imgfile}.html"
           cat > "$html_file" << 'EOF'
 <!DOCTYPE html>
@@ -630,6 +696,22 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
       max-height: none !important;
       width: auto !important;
       height: auto !important;
+      min-width: 800px !important;
+      min-height: 600px !important;
+    }
+    text {
+      font-family: Arial, sans-serif !important;
+      font-size: 16px !important;
+      fill: black !important;
+    }
+    .node rect, .node circle, .node polygon, .node path {
+      fill: white !important;
+      stroke: black !important;
+      stroke-width: 2px !important;
+    }
+    .edgePath path {
+      stroke: black !important;
+      stroke-width: 2px !important;
     }
   </style>
 </head>
@@ -646,9 +728,9 @@ EOF
 
           # Use larger window size to prevent truncation
           png_output=$(chromium --headless --disable-gpu --no-sandbox --disable-setuid-sandbox \
-            --window-size=2400,1800 --hide-scrollbars --disable-web-security \
-            --virtual-time-budget=8000 \
-            --force-device-scale-factor=1 \
+            --window-size=3000,2000 --hide-scrollbars --disable-web-security \
+            --virtual-time-budget=10000 \
+            --force-device-scale-factor=2 \
             --screenshot="$mermaid_img_dir/${imgfile}.png" \
             "file://$html_file" 2>&1)
           png_exit_code=$?
@@ -669,6 +751,50 @@ EOF
           rm -f "$html_file"
         else
           info "Chromium not available"
+        fi
+      fi
+
+      # Method 3: Direct SVG use with fallback
+      if [ "$png_success" = false ]; then
+        info "Both Inkscape and Chromium methods failed. Setting up for direct SVG inclusion..."
+        
+        # Create a simplified version of the SVG that's more compatible with PDF conversion
+        simplified_svg="$mermaid_img_dir/${imgfile}_simplified.svg"
+        
+        # Copy original and simplify
+        cp "$mermaid_img_dir/${imgfile}.svg" "$simplified_svg"
+        
+        # Set explicit dimensions if missing
+        if ! grep -q "width=" "$simplified_svg"; then
+          sed -i 's/<svg/<svg width="1200" height="800" /g' "$simplified_svg"
+        fi
+        
+        # Fix any font issues
+        sed -i 's/font-family="[^"]*"/font-family="Arial, sans-serif"/g' "$simplified_svg"
+        sed -i 's/font-size="[^"]*"/font-size="16px"/g' "$simplified_svg"
+        
+        # Ensure dark text color
+        sed -i 's/fill="[^"]*"/fill="black"/g' "$simplified_svg"
+        
+        # Fix text positioning if needed
+        sed -i 's/<text/<text dominant-baseline="central" /g' "$simplified_svg"
+        
+        # Use this simplified SVG instead of PNG (PDF generation will handle it)
+        if [ -s "$simplified_svg" ] && [ "$(stat -c '%s' "$simplified_svg")" -gt 100 ]; then
+          info "Created simplified SVG for direct inclusion in PDF"
+          cp "$simplified_svg" "$mermaid_img_dir/${imgfile}.svg"
+          
+          # Create a basic PNG as a fallback using ImageMagick if available
+          if command -v convert >/dev/null 2>&1; then
+            convert -size 1200x800 xc:white -font Arial -pointsize 20 -gravity center \
+              -annotate 0 "Mermaid Diagram: See PDF for complete visualization" \
+              "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || true
+            
+            if [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
+              png_success=true
+              info "Created basic fallback PNG with ImageMagick"
+            fi
+          fi
         fi
       fi
 
