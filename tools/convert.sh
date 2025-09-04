@@ -433,34 +433,60 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
   <style>
     body {
       margin: 0;
-      padding: 40px;
+      padding: 0;
       font-family: Arial, sans-serif;
       background: white;
-      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       box-sizing: border-box;
     }
+    .container {
+      padding: 20px;
+      display: inline-block;
+    }
     svg {
-      max-width: calc(100% - 80px);
-      height: auto;
       display: block;
-      margin: 0 auto;
+      width: 100%;
+      height: 100%;
     }
   </style>
 </head>
 <body>
+<div class="container">
 EOF
 
       # Embed the SVG content
       cat "$mermaid_img_dir/${imgfile}.svg" >> "$html_file"
 
       cat >> "$html_file" << 'EOF'
+</div>
 </body>
 </html>
 EOF
 
-      # Use Chromium to take a screenshot
+      # Extract SVG viewBox dimensions to set appropriate screenshot size
+      viewbox=$(grep -o 'viewBox="[^"]*"' "$mermaid_img_dir/${imgfile}.svg" | grep -o '[0-9].* [0-9].*' | head -1)
+      if [ -n "$viewbox" ]; then
+        # Extract width and height from viewBox
+        svg_width=$(echo "$viewbox" | awk '{print $3}')
+        svg_height=$(echo "$viewbox" | awk '{print $4}')
+        
+        # Add padding to dimensions (100px on each side)
+        chrome_width=$((svg_width + 200))
+        chrome_height=$((svg_height + 200))
+        
+        info "Setting Chromium window size to ${chrome_width}x${chrome_height} based on SVG viewBox"
+      else
+        # Default values if viewBox extraction fails
+        chrome_width=1400
+        chrome_height=1000
+        info "Could not extract SVG viewBox, using default window size ${chrome_width}x${chrome_height}"
+      fi
+      
+      # Use Chromium to take a screenshot with dimensions based on the SVG content
       png_output=$(chromium --headless --disable-gpu --no-sandbox --disable-setuid-sandbox \
-        --window-size=1400,1000 --hide-scrollbars --disable-web-security \
+        --window-size=${chrome_width},${chrome_height} --hide-scrollbars --disable-web-security \
         --virtual-time-budget=3000 \
         --force-device-scale-factor=1 \
         --screenshot="$mermaid_img_dir/${imgfile}.png" \
@@ -485,9 +511,23 @@ EOF
       # Method 2: Fallback to rsvg-convert only if Chromium failed
       if [ "$png_success" = false ]; then
         info "Trying rsvg-convert as fallback..."
-        png_output=$(rsvg-convert --format=png --width=1200 --height=800 --keep-aspect-ratio \
-          --dpi-x=150 --dpi-y=150 \
-          "$mermaid_img_dir/${imgfile}.svg" -o "$mermaid_img_dir/${imgfile}.png" 2>&1)
+        
+        # Use the same dimensions we calculated for Chromium if available
+        if [ -n "$viewbox" ] && [ -n "$svg_width" ] && [ -n "$svg_height" ]; then
+          # For rsvg-convert, use the actual SVG dimensions with a bit higher DPI for better quality
+          info "Using SVG dimensions for rsvg-convert: ${svg_width}x${svg_height}"
+          png_output=$(rsvg-convert --format=png --keep-aspect-ratio \
+            --width="$svg_width" --height="$svg_height" \
+            --dpi-x=150 --dpi-y=150 \
+            "$mermaid_img_dir/${imgfile}.svg" -o "$mermaid_img_dir/${imgfile}.png" 2>&1)
+        else
+          # Default values if dimensions aren't available
+          info "Using default dimensions for rsvg-convert"
+          png_output=$(rsvg-convert --format=png --keep-aspect-ratio \
+            --width=1200 --height=800 \
+            --dpi-x=150 --dpi-y=150 \
+            "$mermaid_img_dir/${imgfile}.svg" -o "$mermaid_img_dir/${imgfile}.png" 2>&1)
+        fi
         png_exit_code=$?
 
         if [ $png_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
