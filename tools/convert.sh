@@ -307,14 +307,40 @@ cat > "$puppeteer_config_file" << 'EOF'
 }
 EOF
 
-# Create Mermaid config file with basic settings for text visibility
+# Create Mermaid config file with enhanced settings for text visibility
 mermaid_config_file="/tmp/mermaid.config.json"
 cat > "$mermaid_config_file" << 'EOF'
 {
   "theme": "default",
   "themeVariables": {
     "fontFamily": "Arial, sans-serif",
-    "fontSize": "14px"
+    "fontSize": "16px",
+    "primaryColor": "#0078d4",
+    "primaryTextColor": "#333333",
+    "primaryBorderColor": "#444444",
+    "lineColor": "#666666",
+    "secondaryColor": "#006100",
+    "tertiaryColor": "#fff",
+    "clusterBkg": "#f4f4f4",
+    "defaultLinkColor": "#333333",
+    "titleColor": "#333333",
+    "edgeLabelBackground": "#ffffff"
+  },
+  "flowchart": {
+    "htmlLabels": true,
+    "curve": "basis"
+  },
+  "er": {
+    "useMaxWidth": false
+  },
+  "sequence": {
+    "useMaxWidth": false,
+    "boxMargin": 10,
+    "noteMargin": 10,
+    "messageMargin": 35
+  },
+  "gantt": {
+    "useMaxWidth": false
   }
 }
 EOF
@@ -382,28 +408,47 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
       continue
     fi
 
-    # Try to run mmdc with minimal configuration first
+    # Try to run mmdc with better configuration for readability
     mmdc_output=$(mmdc -i "/tmp/mermaid_${imgfile}.mmd" -o "$mermaid_img_dir/${imgfile}.svg" \
       --puppeteerConfigFile "$puppeteer_config_file" \
       --configFile "$mermaid_config_file" \
-      --scale 1 \
-      --backgroundColor transparent 2>&1)
+      --scale 2 \
+      --width 1600 \
+      --height 1200 \
+      --backgroundColor white 2>&1)
     mmdc_exit_code=$?
 
-    # If that fails, try without any config files
+    # If that fails, try with simpler configuration
     if [ $mmdc_exit_code -ne 0 ] || [ ! -f "$mermaid_img_dir/${imgfile}.svg" ]; then
-      info "Retrying mmdc without config files..."
+      info "Retrying mmdc with simpler configuration..."
       mmdc_output=$(mmdc -i "/tmp/mermaid_${imgfile}.mmd" -o "$mermaid_img_dir/${imgfile}.svg" \
-        --scale 1 \
+        --scale 1.5 \
         --backgroundColor white 2>&1)
       mmdc_exit_code=$?
-    fi
+
+      # If that still fails, try basic configuration as last resort
+      if [ $mmdc_exit_code -ne 0 ] || [ ! -f "$mermaid_img_dir/${imgfile}.svg" ]; then
+        info "Final attempt with basic mmdc configuration..."
+        mmdc_output=$(mmdc -i "/tmp/mermaid_${imgfile}.mmd" -o "$mermaid_img_dir/${imgfile}.svg" 2>&1)
+        mmdc_exit_code=$?
+      fi
+    }
 
     if [ $mmdc_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.svg" ]; then
       info "Successfully rendered mermaid diagram: $imgfile"
       # Debug: Check if SVG contains text elements and show sample text
       text_count=$(grep -c "<text" "$mermaid_img_dir/${imgfile}.svg" || echo "0")
       info "Debug: SVG contains $text_count text elements"
+
+      # Enhance SVG for better visibility in PDF
+      sed -i 's/<text /<text font-family="Arial, sans-serif" font-weight="bold" /g' "$mermaid_img_dir/${imgfile}.svg"
+
+      # Increase text size for better readability
+      sed -i 's/font-size="[0-9.]*"/font-size="16"/g' "$mermaid_img_dir/${imgfile}.svg"
+
+      # Fix text color for better contrast
+      sed -i 's/fill="#[0-9a-fA-F]*"/fill="#333333"/g' "$mermaid_img_dir/${imgfile}.svg"
+
       if [ "$text_count" -gt 0 ]; then
         sample_text=$(grep -o "<text[^>]*>[^<]*</text>" "$mermaid_img_dir/${imgfile}.svg" | head -3 | sed 's/<[^>]*>//g' | tr '\n' ' ')
         info "Debug: Sample text content: $sample_text"
@@ -412,6 +457,10 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
         # Show a bit of the SVG structure for debugging
         info "Debug: SVG structure preview:"
         head -20 "$mermaid_img_dir/${imgfile}.svg" | grep -E "<(g|rect|path|circle|text)"
+
+        # Try to fix SVG with no visible text (may be hidden in nested elements)
+        info "Attempting to fix SVG with no visible text"
+        sed -i 's/<g /<g font-family="Arial, sans-serif" font-size="16" fill="#333333" /g' "$mermaid_img_dir/${imgfile}.svg"
       fi
 
       # Convert SVG to PNG to ensure text is preserved in PDF
@@ -426,9 +475,6 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
       # Create a minimal HTML wrapper for the SVG
       html_file="/tmp/mermaid_${imgfile}.html"
       cat > "$html_file" << 'EOF'
-# Create a minimal HTML wrapper for the SVG that doesn't add extra whitespace
-      html_file="/tmp/mermaid_${imgfile}.html"
-      cat > "$html_file" << 'EOF'
 <!DOCTYPE html>
 <html>
 <head>
@@ -437,23 +483,29 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
     body {
       margin: 0;
       padding: 0;
-      font-family: Arial, sans-serif;
-      background: white;
+      background-color: white;
       display: flex;
       justify-content: center;
       align-items: center;
-      box-sizing: border-box;
-      overflow: visible;
     }
     .container {
-      padding: 10px;
+      padding: 0;
       margin: 0;
       display: inline-block;
     }
     svg {
       display: block;
       width: 100%;
-      height: 100%;
+      height: auto;
+      min-width: 800px;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+    }
+    /* Improve text visibility */
+    svg text {
+      font-family: Arial, sans-serif !important;
+      font-size: 14px !important;
+      fill: #333 !important;
     }
   </style>
 </head>
@@ -484,53 +536,66 @@ EOF
         if echo "$svg_width" | grep -qE '^[0-9]+$' && echo "$svg_height" | grep -qE '^[0-9]+$'; then
           # Verify dimensions are reasonable
           if [ "$svg_width" -gt 0 ] && [ "$svg_height" -gt 0 ]; then
-            # Scale up the diagram for better readability - multiply by 1.5
-            chrome_width=$((svg_width * 3 / 2))
-            chrome_height=$((svg_height * 3 / 2))
+            # Scale up the diagram for better readability - use a higher multiplier (2.5x) for more visibility
+            chrome_width=$((svg_width * 5 / 2))
+            chrome_height=$((svg_height * 5 / 2))
 
             # Ensure minimum size (prevents tiny diagrams)
-            if [ "$chrome_width" -lt 800 ]; then
-              chrome_width=800
+            if [ "$chrome_width" -lt 1200 ]; then
+              chrome_width=1200
             fi
-            if [ "$chrome_height" -lt 600 ]; then
-              chrome_height=600
+            if [ "$chrome_height" -lt 800 ]; then
+              chrome_height=800
             fi
 
             # Update the SVG directly to ensure it scales properly
             sed -i "s/width=\"[^\"]*\"/width=\"${chrome_width}\"/" "$mermaid_img_dir/${imgfile}.svg"
             sed -i "s/height=\"[^\"]*\"/height=\"${chrome_height}\"/" "$mermaid_img_dir/${imgfile}.svg"
 
+            # Ensure viewBox is correctly set
+            sed -i "s/viewBox=\"[^\"]*\"/viewBox=\"0 0 ${chrome_width} ${chrome_height}\"/" "$mermaid_img_dir/${imgfile}.svg"
+
             info "Setting Chromium window size to ${chrome_width}x${chrome_height} based on SVG viewBox"
           else
             # Default values if dimensions are too small
-            chrome_width=1200
-            chrome_height=900
+            chrome_width=1600
+            chrome_height=1200
             info "SVG dimensions too small (width=${svg_width}, height=${svg_height}), using default window size ${chrome_width}x${chrome_height}"
           fi
         else
           # Default values if dimensions are not numeric
-          chrome_width=1200
-          chrome_height=900
+          chrome_width=1600
+          chrome_height=1200
           info "Non-numeric SVG dimensions (width=${svg_width}, height=${svg_height}), using default window size ${chrome_width}x${chrome_height}"
         fi
       else
         # Default values if viewBox extraction fails
-        chrome_width=1200
-        chrome_height=900
+        chrome_width=1600
+        chrome_height=1200
         info "Could not extract SVG viewBox, using default window size ${chrome_width}x${chrome_height}"
       fi
 
+      # Fix the SVG to ensure better text rendering
+      # 1. Increase font size for better readability
+      sed -i 's/font-size="[^"]*"/font-size="14px"/g' "$mermaid_img_dir/${imgfile}.svg"
+      # 2. Ensure text has good contrast
+      sed -i 's/fill="[^"]*"/fill="#333333"/g' "$mermaid_img_dir/${imgfile}.svg"
+
       # Use Chromium to take a screenshot with dimensions based on the SVG content
-      # Using --screenshot with specific clipping area to eliminate extra whitespace
-      png_output=$(chromium --headless --disable-gpu --no-sandbox --disable-setuid-sandbox \
-        --window-size=${chrome_width},${chrome_height} --hide-scrollbars --disable-web-security \
-        --virtual-time-budget=5000 \
-        --force-device-scale-factor=2 \
+      # Adding a timeout to prevent indefinite hanging
+      info "Running Chromium screenshot with timeout (30 seconds)"
+      png_output=$(timeout 30 chromium --headless --disable-gpu --no-sandbox --disable-setuid-sandbox \
+        --window-size=${chrome_width},${chrome_height} --hide-scrollbars \
         --screenshot="$mermaid_img_dir/${imgfile}.png" \
-        --no-margins \
-        --clip-rect=0,0,${chrome_width},${chrome_height} \
+        --force-device-scale-factor=1 \
         "file://$html_file" 2>&1)
       png_exit_code=$?
+
+      # Check for timeout
+      if [ $png_exit_code -eq 124 ]; then
+        info "Chromium screenshot timed out after 30 seconds"
+        png_exit_code=1
+      fi
 
       if [ $png_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
         png_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
@@ -555,33 +620,45 @@ EOF
         if [ -n "$viewbox" ] && [ -n "$svg_width" ] && [ -n "$svg_height" ] &&
            echo "$svg_width" | grep -qE '^[0-9]+$' && echo "$svg_height" | grep -qE '^[0-9]+$' &&
            [ "$svg_width" -gt 0 ] && [ "$svg_height" -gt 0 ]; then
-          # For rsvg-convert, use scaled dimensions (1.5x) with higher DPI for better quality
-          rsvg_width=$((svg_width * 3 / 2))
-          rsvg_height=$((svg_height * 3 / 2))
+          # For rsvg-convert, use scaled dimensions (3x) with higher DPI for better quality
+          rsvg_width=$((svg_width * 3))
+          rsvg_height=$((svg_height * 3))
           # Ensure minimum size
-          if [ "$rsvg_width" -lt 800 ]; then
-            rsvg_width=800
+          if [ "$rsvg_width" -lt 1200 ]; then
+            rsvg_width=1200
           fi
-          if [ "$rsvg_height" -lt 600 ]; then
-            rsvg_height=600
+          if [ "$rsvg_height" -lt 800 ]; then
+            rsvg_height=800
           fi
 
           info "Using scaled SVG dimensions for rsvg-convert: ${rsvg_width}x${rsvg_height}"
+          # Use higher DPI (600) for much better text clarity
           png_output=$(rsvg-convert --format=png --keep-aspect-ratio \
             --width="$rsvg_width" --height="$rsvg_height" \
-            --dpi-x=300 --dpi-y=300 \
+            --dpi-x=600 --dpi-y=600 \
             --background-color=white \
             "$mermaid_img_dir/${imgfile}.svg" -o "$mermaid_img_dir/${imgfile}.png" 2>&1)
         else
           # Default values if dimensions aren't available or invalid
           info "Using default dimensions for rsvg-convert"
           png_output=$(rsvg-convert --format=png --keep-aspect-ratio \
-            --width=1200 --height=900 \
-            --dpi-x=300 --dpi-y=300 \
+            --width=1600 --height=1200 \
+            --dpi-x=600 --dpi-y=600 \
             --background-color=white \
             "$mermaid_img_dir/${imgfile}.svg" -o "$mermaid_img_dir/${imgfile}.png" 2>&1)
         fi
         png_exit_code=$?
+
+        # If rsvg-convert fails or produces a small file, try inkscape as a last resort if available
+        if [ $png_exit_code -ne 0 ] || [ ! -f "$mermaid_img_dir/${imgfile}.png" ] || [ "$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")" -lt 5000 ]; then
+          if command -v inkscape >/dev/null 2>&1; then
+            info "Trying Inkscape as a last resort..."
+            png_output=$(inkscape --export-filename="$mermaid_img_dir/${imgfile}.png" \
+              --export-dpi=300 --export-background=white \
+              "$mermaid_img_dir/${imgfile}.svg" 2>&1)
+            png_exit_code=$?
+          fi
+        fi
 
         if [ $png_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
           png_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
