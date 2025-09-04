@@ -432,7 +432,7 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
         mmdc_output=$(mmdc -i "/tmp/mermaid_${imgfile}.mmd" -o "$mermaid_img_dir/${imgfile}.svg" 2>&1)
         mmdc_exit_code=$?
       fi
-    }
+    fi
 
     if [ $mmdc_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.svg" ]; then
       info "Successfully rendered mermaid diagram: $imgfile"
@@ -510,7 +510,8 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
   </style>
 </head>
 <body>
-<div class="container">'
+<div class="container">
+EOF
 EOF
 
       # Embed the SVG content
