@@ -10,15 +10,16 @@ cleanup() {
 error() {
   local line="${1}"
   local message="${2}"
-  local code=-1
   if [ $# -gt 2 ]; then
-    code="${3}"
+    local code="${3}"
+  else
+    local code=-1
   fi
   local line_message=""
-  if [ -n "${line}" ]; then
-    line_message=" (line ${line})"
+  if [ "$line" != '' ]; then
+    line_message=" on or near line ${line}"
   fi
-  if [ ${code} -ne -1 ] && [ -n "${message}" ]; then
+  if test -n "${message}"; then
     message="${message} (exit code ${code})"
   else
     message="Unspecified (exit code ${code})"
@@ -300,48 +301,20 @@ cat > "$puppeteer_config_file" << 'EOF'
 {
   "args": [
     "--no-sandbox",
-    "--disable-setuid-sandbox",
-    "--disable-dev-shm-usage",
-    "--disable-gpu",
-    "--font-render-hinting=none",
-    "--disable-web-security",
-    "--disable-features=IsolateOrigins,site-per-process"
+    "--disable-setuid-sandbox"
   ],
-  "headless": true,
-  "ignoreHTTPSErrors": true,
-  "defaultViewport": {
-    "width": 1200,
-    "height": 800,
-    "deviceScaleFactor": 1
-  }
+  "executablePath": "/usr/bin/chromium"
 }
 EOF
 
-# Create Mermaid config file with enhanced settings for text visibility
+# Create Mermaid config file with basic settings for text visibility
 mermaid_config_file="/tmp/mermaid.config.json"
 cat > "$mermaid_config_file" << 'EOF'
 {
   "theme": "default",
   "themeVariables": {
-    "fontFamily": "DejaVu Sans, Liberation Sans, Arial, sans-serif",
-    "fontSize": "16px",
-    "primaryColor": "#000000",
-    "primaryTextColor": "#000000",
-    "primaryBorderColor": "#000000",
-    "lineColor": "#000000",
-    "secondaryColor": "#444444",
-    "tertiaryColor": "#dddddd"
-  },
-  "maxTextSize": 5000,
-  "htmlLabels": true,
-  "securityLevel": "loose",
-  "flowchart": {
-    "htmlLabels": true,
-    "curve": "linear"
-  },
-  "sequence": {
-    "useMaxWidth": false,
-    "boxMargin": 10
+    "fontFamily": "Arial, sans-serif",
+    "fontSize": "14px"
   }
 }
 EOF
@@ -379,10 +352,6 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
   export PUPPETEER_EXECUTABLE_PATH="${PUPPETEER_EXECUTABLE_PATH:-/usr/bin/chromium}"
   export PUPPETEER_ARGS="${PUPPETEER_ARGS:---no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu}"
 
-  # For Alpine Linux specifically, add these additional settings
-  export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-  export PUPPETEER_SKIP_DOWNLOAD=true
-
   # Debug: Check if mmdc and chromium are available
   info "Debug: PUPPETEER_EXECUTABLE_PATH=$PUPPETEER_EXECUTABLE_PATH"
   info "Debug: PUPPETEER_ARGS=$PUPPETEER_ARGS"
@@ -395,14 +364,6 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
     info "Debug: Chromium found at $PUPPETEER_EXECUTABLE_PATH"
   else
     warning "Debug: Chromium not found at $PUPPETEER_EXECUTABLE_PATH"
-    # Try to find chromium with different names (Alpine may use different binary names)
-    for chrome_bin in chromium-browser chrome google-chrome; do
-      if command -v "$chrome_bin" >/dev/null 2>&1; then
-        export PUPPETEER_EXECUTABLE_PATH=$(command -v "$chrome_bin")
-        info "Debug: Found alternative browser at $PUPPETEER_EXECUTABLE_PATH"
-        break
-      fi
-    done
   fi
 
   while read -r imgfile; do
@@ -421,523 +382,165 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
       continue
     fi
 
-    # Set a flag to track if we successfully generated an SVG
-    svg_generation_success=false
-
-    # Try to run mmdc with enhanced configuration for better text rendering
-    info "Attempting mmdc with primary configuration..."
+    # Try to run mmdc with minimal configuration first
     mmdc_output=$(mmdc -i "/tmp/mermaid_${imgfile}.mmd" -o "$mermaid_img_dir/${imgfile}.svg" \
       --puppeteerConfigFile "$puppeteer_config_file" \
       --configFile "$mermaid_config_file" \
-      --fontFamily "Arial, sans-serif" \
-      --width 1200 \
-      --scale 1.5 \
-      --backgroundColor white 2>&1) || true
+      --scale 1 \
+      --backgroundColor transparent 2>&1)
+    mmdc_exit_code=$?
 
-    # Check if SVG was generated successfully
-    if [ -f "$mermaid_img_dir/${imgfile}.svg" ] && [ -s "$mermaid_img_dir/${imgfile}.svg" ]; then
-      svg_generation_success=true
-      info "Successfully rendered mermaid diagram with primary configuration"
-    else
-      warning "Primary mmdc configuration failed: $mmdc_output"
-
-      # Try with minimal configuration
-      info "Attempting mmdc with minimal configuration..."
+    # If that fails, try without any config files
+    if [ $mmdc_exit_code -ne 0 ] || [ ! -f "$mermaid_img_dir/${imgfile}.svg" ]; then
+      info "Retrying mmdc without config files..."
       mmdc_output=$(mmdc -i "/tmp/mermaid_${imgfile}.mmd" -o "$mermaid_img_dir/${imgfile}.svg" \
-        --fontFamily "Arial" \
-        --width 1000 \
-        --scale 1.2 \
-        --backgroundColor white 2>&1) || true
-
-      if [ -f "$mermaid_img_dir/${imgfile}.svg" ] && [ -s "$mermaid_img_dir/${imgfile}.svg" ]; then
-        svg_generation_success=true
-        info "Successfully rendered mermaid diagram with minimal configuration"
-      else
-        warning "Minimal mmdc configuration failed: $mmdc_output"
-
-        # Last attempt with absolute minimal settings
-        info "Attempting mmdc with failsafe configuration..."
-        mmdc_output=$(mmdc -i "/tmp/mermaid_${imgfile}.mmd" -o "$mermaid_img_dir/${imgfile}.svg" \
-          --backgroundColor white 2>&1) || true
-
-        if [ -f "$mermaid_img_dir/${imgfile}.svg" ] && [ -s "$mermaid_img_dir/${imgfile}.svg" ]; then
-          svg_generation_success=true
-          info "Successfully rendered mermaid diagram with failsafe configuration"
-        else
-          warning "All mmdc configurations failed. Creating placeholder image."
-
-          # Create a placeholder SVG with the diagram content as text
-          mermaid_content=$(cat "/tmp/mermaid_${imgfile}.mmd" | sed 's/</\&lt;/g' | sed 's/>/\&gt;/g')
-          cat > "$mermaid_img_dir/${imgfile}.svg" << EOF
-<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600">
-  <rect width="100%" height="100%" fill="white"/>
-  <text x="10" y="20" font-family="Arial, sans-serif" font-size="16" fill="black">Mermaid diagram could not be rendered.</text>
-  <text x="10" y="45" font-family="Arial, sans-serif" font-size="12" fill="black">Diagram source code:</text>
-  <foreignObject x="10" y="60" width="780" height="530">
-    <div xmlns="http://www.w3.org/1999/xhtml" style="font-family: monospace; white-space: pre; font-size: 12px;">$mermaid_content</div>
-  </foreignObject>
-</svg>
-EOF
-          info "Created placeholder SVG with diagram source code"
-          svg_generation_success=true
-        fi
-      fi
+        --scale 1 \
+        --backgroundColor white 2>&1)
+      mmdc_exit_code=$?
     fi
 
-    # If we have an SVG file at this point, process it
-    if [ "$svg_generation_success" = true ]; then
+    if [ $mmdc_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.svg" ]; then
       info "Successfully rendered mermaid diagram: $imgfile"
-
-      # Process the SVG to enhance text visibility
-      info "Post-processing SVG to improve text rendering..."
-
-      # Save original SVG as backup
-      cp "$mermaid_img_dir/${imgfile}.svg" "$mermaid_img_dir/${imgfile}_original.svg"
-
-      # Use available fonts on the system - Alpine typically has DejaVu and Liberation fonts
-      sed -i 's/<text/<text font-family="DejaVu Sans, Liberation Sans, Arial, sans-serif" font-size="16px" /g' "$mermaid_img_dir/${imgfile}.svg" 2>/dev/null || true
-
-      # Fix any empty text elements or make them more visible
-      sed -i 's/<text[^>]*><\/text>/<text font-family="DejaVu Sans, Liberation Sans, Arial, sans-serif" font-size="16px" fill="black">Text<\/text>/g' "$mermaid_img_dir/${imgfile}.svg" 2>/dev/null || true
-
-      # Ensure all text has proper fill color
-      sed -i 's/fill="none"/fill="black"/g' "$mermaid_img_dir/${imgfile}.svg" 2>/dev/null || true
-
-      # Add text stroke for better visibility
-      sed -i 's/<text/<text stroke="none" /g' "$mermaid_img_dir/${imgfile}.svg" 2>/dev/null || true
-
-      # Modify SVG viewBox if needed to avoid cropping
-      viewbox=$(grep -o 'viewBox="[^"]*"' "$mermaid_img_dir/${imgfile}.svg")
-      if [ -n "$viewbox" ]; then
-        # Add 5% padding to viewBox values
-        new_viewbox=$(echo "$viewbox" | awk -F'"' '{
-          split($2, a, " ");
-          x = a[1]; y = a[2]; w = a[3]; h = a[4];
-          pad_w = w * 0.05; pad_h = h * 0.05;
-          printf("viewBox=\"%s %s %s %s\"", x-pad_w, y-pad_h, w+pad_w*2, h+pad_h*2);
-        }')
-        if [ -n "$new_viewbox" ]; then
-          sed -i "s/$viewbox/$new_viewbox/g" "$mermaid_img_dir/${imgfile}.svg" 2>/dev/null || true
-        fi
-      fi
-
       # Debug: Check if SVG contains text elements and show sample text
-      text_count=$(grep -c "<text" "$mermaid_img_dir/${imgfile}.svg" 2>/dev/null || echo "0")
-      # Ensure we have a valid integer
-      text_count=${text_count:-0}
+      text_count=$(grep -c "<text" "$mermaid_img_dir/${imgfile}.svg" || echo "0")
       info "Debug: SVG contains $text_count text elements"
       if [ "$text_count" -gt 0 ]; then
-        sample_text=$(grep -o "<text[^>]*>[^<]*</text>" "$mermaid_img_dir/${imgfile}.svg" 2>/dev/null | head -3 | sed 's/<[^>]*>//g' | tr '\n' ' ')
+        sample_text=$(grep -o "<text[^>]*>[^<]*</text>" "$mermaid_img_dir/${imgfile}.svg" | head -3 | sed 's/<[^>]*>//g' | tr '\n' ' ')
         info "Debug: Sample text content: $sample_text"
       else
         warning "Warning: SVG file contains no text elements, text may not be visible"
         # Show a bit of the SVG structure for debugging
         info "Debug: SVG structure preview:"
-        head -20 "$mermaid_img_dir/${imgfile}.svg" | grep -E "<(g|rect|path|circle|text)" 2>/dev/null || true
+        head -20 "$mermaid_img_dir/${imgfile}.svg" | grep -E "<(g|rect|path|circle|text)"
       fi
 
       # Convert SVG to PNG to ensure text is preserved in PDF
       info "Converting SVG to PNG for better PDF compatibility..."
 
+      # Try Chromium-based conversion first (most reliable for text)
       png_success=false
 
-      # Method 1: Try Inkscape first (primary method - fix black box issue)
-      if command -v inkscape >/dev/null 2>&1; then
-        info "Attempting PNG conversion with Inkscape..."
+      # Method 1: Use Chromium to render SVG directly to PNG
+      info "Attempting PNG conversion with Chromium..."
 
-        # Sanitize SVG to remove filters and other elements that can trigger black boxes in headless Inkscape
-        source_svg="$mermaid_img_dir/${imgfile}.svg"
-        sanitized_svg="/tmp/${imgfile}_sanitized.svg"
-        plain_svg="/tmp/${imgfile}_plain.svg"
+      # Create a minimal HTML wrapper for the SVG
+      html_file="/tmp/mermaid_${imgfile}.html"
 
-        # Copy the source SVG to sanitized version
-        cp "$source_svg" "$sanitized_svg" 2>/dev/null || true
+      # First, get the SVG dimensions to set proper viewport
+      svg_width=$(grep -o 'viewBox="[^"]*"' "$mermaid_img_dir/${imgfile}.svg" | sed 's/viewBox="[0-9]* [0-9]* \([0-9]*\) \([0-9]*\)"/\1/' || echo "400")
+      svg_height=$(grep -o 'viewBox="[^"]*"' "$mermaid_img_dir/${imgfile}.svg" | sed 's/viewBox="[0-9]* [0-9]* \([0-9]* \)\([0-9]*\)"/\2/' || echo "300")
 
-        if [ -f "$sanitized_svg" ]; then
-          # First stage: Remove problematic elements that cause black box rendering
-          pre_filter_count=$(grep -c "<filter" "$sanitized_svg" 2>/dev/null || echo "0")
-          pre_clippath_count=$(grep -c "<clipPath" "$sanitized_svg" 2>/dev/null || echo "0")
-          pre_mask_count=$(grep -c "<mask" "$sanitized_svg" 2>/dev/null || echo "0")
+      # Calculate window size with padding
+      window_width=$((svg_width + 100))
+      window_height=$((svg_height + 100))
 
-          # Ensure we have valid integers for arithmetic
-          pre_filter_count=${pre_filter_count:-0}
-          pre_clippath_count=${pre_clippath_count:-0}
-          pre_mask_count=${pre_mask_count:-0}
+      # Ensure minimum window size
+      [ "$window_width" -lt 600 ] && window_width=600
+      [ "$window_height" -lt 400 ] && window_height=400
 
-          # Remove filter elements completely
-          sed -i '/<filter[[:space:]]/,/<\/filter>/d' "$sanitized_svg" 2>/dev/null || true
-          # Remove filter references
-          sed -i -E 's/[[:space:]]filter="url\(#[-A-Za-z0-9_]+\)"//g' "$sanitized_svg" 2>/dev/null || true
-          # Remove specific filter elements
-          sed -i '/<feDropShadow[[:space:]]/d' "$sanitized_svg" 2>/dev/null || true
-          sed -i '/<feGaussianBlur[[:space:]]/d' "$sanitized_svg" 2>/dev/null || true
-          sed -i '/<feOffset[[:space:]]/d' "$sanitized_svg" 2>/dev/null || true
-          sed -i '/<feComposite[[:space:]]/d' "$sanitized_svg" 2>/dev/null || true
-          sed -i '/<feMerge[[:space:]]/d' "$sanitized_svg" 2>/dev/null || true
-          sed -i '/<feMergeNode[[:space:]]/d' "$sanitized_svg" 2>/dev/null || true
+      # Cap maximum window size to reasonable limits
+      [ "$window_width" -gt 1600 ] && window_width=1600
+      [ "$window_height" -gt 1200 ] && window_height=1200
 
-          # Remove clipPath elements
-          sed -i '/<clipPath[[:space:]]/,/<\/clipPath>/d' "$sanitized_svg" 2>/dev/null || true
-          sed -i -E 's/[[:space:]]clip-path="url\(#[-A-Za-z0-9_]+\)"//g' "$sanitized_svg" 2>/dev/null || true
-
-          # Remove mask elements
-          sed -i '/<mask[[:space:]]/,/<\/mask>/d' "$sanitized_svg" 2>/dev/null || true
-          sed -i -E 's/[[:space:]]mask="url\(#[-A-Za-z0-9_]+\)"//g' "$sanitized_svg" 2>/dev/null || true
-
-          # Log counts
-          post_filter_count=$(grep -c "<filter" "$sanitized_svg" 2>/dev/null || echo "0")
-          post_clippath_count=$(grep -c "<clipPath" "$sanitized_svg" 2>/dev/null || echo "0")
-          post_mask_count=$(grep -c "<mask" "$sanitized_svg" 2>/dev/null || echo "0")
-
-          # Ensure we have valid integers for arithmetic
-          post_filter_count=${post_filter_count:-0}
-          post_clippath_count=${post_clippath_count:-0}
-          post_mask_count=${post_mask_count:-0}
-
-          # Safely perform arithmetic operations with error handling
-          removed_filters=0
-          removed_clippaths=0
-          removed_masks=0
-
-          if [ "$pre_filter_count" -ge "$post_filter_count" ]; then
-            removed_filters=$((pre_filter_count - post_filter_count))
-          fi
-
-          if [ "$pre_clippath_count" -ge "$post_clippath_count" ]; then
-            removed_clippaths=$((pre_clippath_count - post_clippath_count))
-          fi
-
-          if [ "$pre_mask_count" -ge "$post_mask_count" ]; then
-            removed_masks=$((pre_mask_count - post_mask_count))
-          fi
-
-          total_removed=$((removed_filters + removed_clippaths + removed_masks))
-
-          if [ "$total_removed" -gt 0 ]; then
-            info "Sanitized SVG: removed $removed_filters filters, $removed_clippaths clip paths, $removed_masks masks for $imgfile"
-          fi
-
-          # Second stage: Use Inkscape to create a "plain SVG" format which is more compatible
-          if [ -s "$sanitized_svg" ]; then
-            info "Creating plain SVG format for better compatibility..."
-            inkscape --export-plain-svg="$plain_svg" "$sanitized_svg" >/dev/null 2>&1 || cp "$sanitized_svg" "$plain_svg"
-            if [ -s "$plain_svg" ]; then
-              info "Successfully created plain SVG version"
-              svg_for_inkscape="$plain_svg"
-            else
-              svg_for_inkscape="$sanitized_svg"
-            fi
-          else
-            svg_for_inkscape="$source_svg"
-          fi
-        else
-          svg_for_inkscape="$source_svg"
-        fi
-
-        # Ensure we have a valid SVG to work with
-        [ -s "$svg_for_inkscape" ] || svg_for_inkscape="$source_svg"
-
-        # Debug: Show Inkscape version and first lines
-        inkscape_version=$(inkscape --version 2>&1 | head -1)
-        info "Debug: Using $inkscape_version"
-        head -n 4 "$svg_for_inkscape" 2>/dev/null | sed 's/^/      /'
-
-        # Try a two-pass approach for better results
-        # Approach 1: Use export-area-drawing with high DPI
-        info "Inkscape approach 1: export-area-drawing with high DPI"
-        png_output=$(inkscape \
-          --export-type=png \
-          --export-area-drawing \
-          --export-dpi=300 \
-          --export-background=white \
-          --export-background-opacity=1 \
-          --export-filename="$mermaid_img_dir/${imgfile}.png" \
-          "$svg_for_inkscape" 2>&1) || true
-
-        if [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
-          png_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
-          if [ "$png_size" -gt 1500 ]; then
-            png_success=true
-            info "Successfully converted to PNG with Inkscape (approach 1): ${imgfile}.png (${png_size} bytes)"
-          else
-            info "Inkscape approach 1 small (${png_size} bytes) trying approach 2..."
-          fi
-        else
-          info "Inkscape approach 1 failed: $png_output"
-        fi
-
-        if [ "$png_success" = false ]; then
-          # Approach 2: Try with different export options
-            info "Inkscape approach 2: export-area-page with fixed width"
-            png_output=$(inkscape \
-              --export-type=png \
-              --export-area-page \
-              --export-background=white \
-              --export-background-opacity=1.0 \
-              --export-dpi=300 \
-              --export-width=3000 \
-              --export-filename="$mermaid_img_dir/${imgfile}.png" \
-              "$svg_for_inkscape" 2>&1) || true
-
-            if [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
-              png_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
-              if [ "$png_size" -gt 1500 ]; then
-                png_success=true
-                info "Successfully converted to PNG with Inkscape (approach 2): ${imgfile}.png (${png_size} bytes)"
-              else
-                info "Inkscape approach 2 also small (${png_size} bytes), trying approach 3..."
-
-                # Approach 3: Last resort - render with forced bitmap conversion
-                info "Inkscape approach 3: text-to-path conversion"
-                png_output=$(inkscape \
-                  --export-type=png \
-                  --export-area-page \
-                  --export-background=white \
-                  --export-background-opacity=1.0 \
-                  --export-dpi=300 \
-                  --export-text-to-path \
-                  --export-filename="$mermaid_img_dir/${imgfile}.png" \
-                  "$source_svg" 2>&1) || true
-
-                if [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
-                  png_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
-                  if [ "$png_size" -gt 1500 ]; then
-                    png_success=true
-                    info "Successfully converted to PNG with Inkscape (approach 3): ${imgfile}.png (${png_size} bytes)"
-                  else
-                    info "All Inkscape approaches failed to create a proper PNG."
-                  fi
-                else
-                  info "Inkscape approach 3 failed: $png_output"
-                fi
-              fi
-            else
-              info "Inkscape approach 2 failed: $png_output"
-            fi
-        fi
-      else
-        info "Inkscape not available, trying other methods..."
-      fi
-
-      # Method 2: Chromium backup (improved to handle truncation)
-      if [ "$png_success" = false ]; then
-        if command -v chromium >/dev/null 2>&1; then
-          info "Attempting PNG conversion with Chromium (enhanced method)..."
-
-          # Create an improved HTML wrapper that handles text better
-          html_file="/tmp/mermaid_${imgfile}.html"
-          cat > "$html_file" << 'EOF'
+      cat > "$html_file" << 'EOF'
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { box-sizing: border-box; }
     html, body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+      background: white;
+    }
+    .container {
       width: 100%;
       height: 100%;
-      background: white;
-      font-family: Arial, sans-serif;
-    }
-    body {
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 100px;
-      min-height: 100vh;
+      padding: 50px;
     }
     svg {
-      max-width: none !important;
-      max-height: none !important;
-      width: auto !important;
-      height: auto !important;
-      min-width: 800px !important;
-      min-height: 600px !important;
-    }
-    text {
-      font-family: Arial, sans-serif !important;
-      font-size: 16px !important;
-      fill: black !important;
-    }
-    .node rect, .node circle, .node polygon, .node path {
-      fill: white !important;
-      stroke: black !important;
-      stroke-width: 2px !important;
-    }
-    .edgePath path {
-      stroke: black !important;
-      stroke-width: 2px !important;
+      max-width: 100%;
+      max-height: 100%;
+      height: auto;
+      width: auto;
     }
   </style>
 </head>
 <body>
+<div class="container">
 EOF
 
-          # Embed the SVG content
-          cat "$mermaid_img_dir/${imgfile}.svg" >> "$html_file"
+      # Embed the SVG content
+      cat "$mermaid_img_dir/${imgfile}.svg" >> "$html_file"
 
-          cat >> "$html_file" << 'EOF'
+      cat >> "$html_file" << 'EOF'
+</div>
 </body>
 </html>
 EOF
 
-          # Use larger window size to prevent truncation with Alpine compatibility flags
-          info "Running Chromium with enhanced Alpine compatibility settings..."
-          png_output=$(chromium --headless --disable-gpu --no-sandbox --disable-setuid-sandbox \
-            --disable-dev-shm-usage \
-            --window-size=3000,2000 --hide-scrollbars --disable-web-security \
-            --disable-features=VizDisplayCompositor \
-            --virtual-time-budget=10000 \
-            --force-device-scale-factor=2 \
-            --screenshot="$mermaid_img_dir/${imgfile}.png" \
-            "file://$html_file" 2>&1) || true
+      # Use Chromium to take a screenshot with dynamic sizing
+      info "Using window size: ${window_width}x${window_height}"
+      png_output=$(chromium --headless --disable-gpu --no-sandbox --disable-setuid-sandbox \
+        --window-size=${window_width},${window_height} --hide-scrollbars --disable-web-security \
+        --virtual-time-budget=5000 \
+        --force-device-scale-factor=1 \
+        --screenshot="$mermaid_img_dir/${imgfile}.png" \
+        "file://$html_file" 2>&1)
+      png_exit_code=$?
 
-          if [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
-            png_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
-            if [ "$png_size" -gt 1000 ]; then
-              png_success=true
-              info "Successfully converted to PNG with Chromium: ${imgfile}.png (${png_size} bytes)"
-            else
-              info "Chromium PNG too small (${png_size} bytes)"
-
-              # Try a second approach with Chromium with simplified options
-              info "Trying simplified Chromium approach..."
-              png_output=$(chromium --headless --disable-gpu --no-sandbox --disable-dev-shm-usage \
-                --window-size=1200,1200 \
-                --screenshot="$mermaid_img_dir/${imgfile}.png" \
-                "file://$html_file" 2>&1) || true
-
-              if [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
-                png_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
-                if [ "$png_size" -gt 1000 ]; then
-                  png_success=true
-                  info "Successfully converted to PNG with simplified Chromium approach: ${imgfile}.png (${png_size} bytes)"
-                else
-                  info "All Chromium approaches failed to produce a proper PNG"
-                fi
-              fi
-            fi
-          else
-            info "Chromium conversion failed: $png_output"
-          fi
-
-          # Clean up HTML file
-          rm -f "$html_file"
+      if [ $png_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
+        png_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
+        if [ "$png_size" -gt 5000 ]; then  # Reasonable size check
+          png_success=true
+          info "Successfully converted to PNG with Chromium: ${imgfile}.png (${png_size} bytes)"
         else
-          info "Chromium not available"
+          info "Chromium PNG too small (${png_size} bytes), trying rsvg-convert..."
         fi
+      else
+        info "Chromium conversion failed: $png_output"
       fi
 
-      # Method 3: Direct SVG use with fallback
+      # Clean up HTML file
+      rm -f "$html_file"
+
+      # Method 2: Fallback to rsvg-convert only if Chromium failed
       if [ "$png_success" = false ]; then
-        info "Both Inkscape and Chromium methods failed. Setting up for direct SVG inclusion..."
+        info "Trying rsvg-convert as fallback..."
+        png_output=$(rsvg-convert --format=png --width=1200 --height=800 --keep-aspect-ratio \
+          --dpi-x=150 --dpi-y=150 \
+          "$mermaid_img_dir/${imgfile}.svg" -o "$mermaid_img_dir/${imgfile}.png" 2>&1)
+        png_exit_code=$?
 
-        # Create a simplified version of the SVG that's more compatible with PDF conversion
-        simplified_svg="$mermaid_img_dir/${imgfile}_simplified.svg"
-
-        # Copy original and simplify
-        cp "$mermaid_img_dir/${imgfile}.svg" "$simplified_svg"
-
-        # Set explicit dimensions if missing
-        if ! grep -q "width=" "$simplified_svg"; then
-          sed -i 's/<svg/<svg width="1200" height="800" /g' "$simplified_svg" 2>/dev/null || true
-        fi
-
-        # Fix any font issues using Alpine Linux system fonts
-        sed -i 's/font-family="[^"]*"/font-family="DejaVu Sans, Liberation Sans, Arial, sans-serif"/g' "$simplified_svg" 2>/dev/null || true
-        sed -i 's/font-size="[^"]*"/font-size="16px"/g' "$simplified_svg" 2>/dev/null || true
-
-        # Ensure all text has proper fill color
-        sed -i 's/fill="[^"]*"/fill="black"/g' "$simplified_svg" 2>/dev/null || true
-
-        # Fix text positioning if needed
-        sed -i 's/<text/<text dominant-baseline="central" /g' "$simplified_svg" 2>/dev/null || true
-
-        # Use this simplified SVG instead of PNG (PDF generation will handle it)
-        if [ -s "$simplified_svg" ] && [ "$(stat -c '%s' "$simplified_svg")" -gt 100 ]; then
-          info "Created simplified SVG for direct inclusion in PDF"
-          cp "$simplified_svg" "$mermaid_img_dir/${imgfile}.svg"
-
-          # Create a basic PNG as a fallback using ImageMagick if available
-          if command -v convert >/dev/null 2>&1; then
-            # Try using system fonts that are likely available on Alpine
-            for font in DejaVu-Sans Liberation-Sans Arial Helvetica; do
-              convert -size 1200x800 xc:white -gravity center \
-                -font "$font" -pointsize 20 \
-                -annotate 0 "Mermaid Diagram" \
-                -font "$font" -pointsize 16 \
-                -annotate +0+40 "See PDF for complete visualization" \
-                "$mermaid_img_dir/${imgfile}.png" 2>/dev/null && break
-            done
-
-            # If that fails, try without specifying a font
-            if [ ! -f "$mermaid_img_dir/${imgfile}.png" ]; then
-              convert -size 1200x800 xc:white -gravity center \
-                -pointsize 20 -annotate 0 "Mermaid Diagram" \
-                -pointsize 16 -annotate +0+40 "See PDF for complete visualization" \
-                "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || true
-            fi
-
-            if [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
-              png_success=true
-              info "Created basic fallback PNG with ImageMagick"
-            fi
+        if [ $png_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
+          png_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
+          if [ "$png_size" -gt 1000 ]; then
+            png_success=true
+            info "Successfully converted to PNG with rsvg-convert: ${imgfile}.png (${png_size} bytes)"
           fi
         fi
       fi
 
-      # Debug: Show final PNG status
-      if [ "$png_success" = true ] && [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
-        final_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
-        info "Final PNG: ${imgfile}.png (${final_size} bytes)"
-
-        # Verify PNG has meaningful content - not just black
-        if command -v file >/dev/null 2>&1; then
-          file_info=$(file "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "")
-          if [ -n "$file_info" ]; then
-            info "PNG file info: $file_info"
-          fi
-        fi
-
+      if [ "$png_success" = true ]; then
         # Update the markdown to use PNG instead of SVG for better PDF text rendering
         sed -i "s|${imgfile}\.svg|${imgfile}.png|g" "${mdOutFile}.with_mermaid"
       else
-        warning "Could not create proper PNG for $imgfile"
-
-        # Create a minimal valid PNG to avoid breaking the PDF generation
-        if ! [ -f "$mermaid_img_dir/${imgfile}.png" ] || [ "$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")" -lt 100 ]; then
-          info "Creating minimal emergency PNG file"
-          # Echo a minimal valid PNG header (1x1 transparent pixel)
-          echo -ne "\x89\x50\x4E\x47\x0D\x0A\x1A\x0A\x00\x00\x00\x0D\x49\x48\x44\x52\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1F\x15\xC4\x89\x00\x00\x00\x0A\x49\x44\x41\x54\x78\x9C\x63\x00\x01\x00\x00\x05\x00\x01\x0D\x0A\x2D\xB4\x00\x00\x00\x00\x49\x45\x4E\x44\xAE\x42\x60\x82" > "$mermaid_img_dir/${imgfile}.png"
-        fi
-
-        # Just continue with the SVG
-        info "Using SVG for this diagram, text may not render properly in final PDF"
+        warning "PNG conversion failed with both methods, keeping SVG: $png_output"
+        info "Note: SVG text may not render properly in final PDF"
       fi
     else
-      warning "Failed to render mermaid diagram: $imgfile"
+      warning "Failed to render mermaid diagram: $imgfile (exit code: $mmdc_exit_code)"
       info "mmdc output: $mmdc_output"
-
-      # Create a placeholder SVG with the diagram source code
-      info "Creating placeholder SVG with diagram source..."
-      mermaid_content=$(cat "/tmp/mermaid_${imgfile}.mmd" | sed 's/</\&lt;/g' | sed 's/>/\&gt;/g')
-      cat > "$mermaid_img_dir/${imgfile}.svg" << EOF
-<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600">
-  <rect width="100%" height="100%" fill="white"/>
-  <text x="10" y="20" font-family="DejaVu Sans, Liberation Sans, Arial, sans-serif" font-size="16" fill="black">Mermaid diagram could not be rendered.</text>
-  <text x="10" y="45" font-family="DejaVu Sans, Liberation Sans, Arial, sans-serif" font-size="12" fill="black">Diagram source code:</text>
-  <foreignObject x="10" y="60" width="780" height="530">
-    <div xmlns="http://www.w3.org/1999/xhtml" style="font-family: monospace; white-space: pre; font-size: 12px;">$mermaid_content</div>
-  </foreignObject>
-</svg>
-EOF
-      info "Created placeholder SVG with diagram source code"
-
-      # Create a minimal PNG as well
-      echo -ne "\x89\x50\x4E\x47\x0D\x0A\x1A\x0A\x00\x00\x00\x0D\x49\x48\x44\x52\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1F\x15\xC4\x89\x00\x00\x00\x0A\x49\x44\x41\x54\x78\x9C\x63\x00\x01\x00\x00\x05\x00\x01\x0D\x0A\x2D\xB4\x00\x00\x00\x00\x49\x45\x4E\x44\xAE\x42\x60\x82" > "$mermaid_img_dir/${imgfile}.png"
-
-      # Update the markdown to use PNG instead of SVG
-      sed -i "s|${imgfile}\.svg|${imgfile}.png|g" "${mdOutFile}.with_mermaid" 2>/dev/null || true
+      # Create a placeholder text file so the image link doesn't break completely
+      echo "Mermaid diagram could not be rendered" > "$mermaid_img_dir/${imgfile}.txt"
     fi
   done < /tmp/mermaid_imglist.txt
 fi
