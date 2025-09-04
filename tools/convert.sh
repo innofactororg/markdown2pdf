@@ -419,12 +419,20 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
 
       png_success=false
 
-      # Method 1: Try Inkscape first (best SVG to PNG conversion)
+      # Method 1: Try Inkscape first (primary method - fix black box issue)
       if command -v inkscape >/dev/null 2>&1; then
         info "Attempting PNG conversion with Inkscape..."
-        png_output=$(inkscape --export-type=png --export-dpi=150 \
-          --export-background=white --export-background-opacity=1 \
-          --export-area-page \
+
+        # Debug: Show Inkscape version and SVG info
+        inkscape_version=$(inkscape --version 2>&1 | head -1)
+        info "Debug: Using $inkscape_version"
+
+        # Try different Inkscape approaches to fix black box issue
+        # Approach 1: Minimal parameters with explicit area
+        png_output=$(inkscape \
+          --export-type=png \
+          --export-area-drawing \
+          --export-dpi=150 \
           --export-filename="$mermaid_img_dir/${imgfile}.png" \
           "$mermaid_img_dir/${imgfile}.svg" 2>&1)
         png_exit_code=$?
@@ -433,114 +441,128 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
           png_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
           if [ "$png_size" -gt 1000 ]; then
             png_success=true
-            info "Successfully converted to PNG with Inkscape: ${imgfile}.png (${png_size} bytes)"
+            info "Successfully converted to PNG with Inkscape (approach 1): ${imgfile}.png (${png_size} bytes)"
           else
-            info "Inkscape PNG too small (${png_size} bytes), trying other methods..."
+            info "Inkscape approach 1 produced small file (${png_size} bytes), trying approach 2..."
+
+            # Approach 2: With background settings but different parameters
+            png_output=$(inkscape \
+              --export-type=png \
+              --export-area-page \
+              --export-background=white \
+              --export-background-opacity=1.0 \
+              --export-dpi=150 \
+              --export-filename="$mermaid_img_dir/${imgfile}.png" \
+              "$mermaid_img_dir/${imgfile}.svg" 2>&1)
+            png_exit_code=$?
+
+            if [ $png_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
+              png_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
+              if [ "$png_size" -gt 1000 ]; then
+                png_success=true
+                info "Successfully converted to PNG with Inkscape (approach 2): ${imgfile}.png (${png_size} bytes)"
+              else
+                info "Inkscape approach 2 also small (${png_size} bytes), will try Chromium backup..."
+              fi
+            else
+              info "Inkscape approach 2 failed: $png_output"
+            fi
           fi
         else
-          info "Inkscape conversion failed: $png_output"
+          info "Inkscape approach 1 failed: $png_output"
         fi
       else
         info "Inkscape not available, trying other methods..."
       fi
 
-      # Method 2: Fallback to Chromium with simpler approach
+      # Method 2: Chromium backup (improved to handle truncation)
       if [ "$png_success" = false ]; then
-        info "Attempting PNG conversion with Chromium..."
+        if command -v chromium >/dev/null 2>&1; then
+          info "Attempting PNG conversion with Chromium (backup method)..."
 
-        # Create simple HTML wrapper without complex parsing
-        html_file="/tmp/mermaid_${imgfile}.html"
-        cat > "$html_file" << 'EOF'
+          # Create simple HTML wrapper
+          html_file="/tmp/mermaid_${imgfile}.html"
+          cat > "$html_file" << 'EOF'
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <style>
-    body {
-      margin: 50px;
-      font-family: Arial, sans-serif;
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
       background: white;
+      font-family: Arial, sans-serif;
+    }
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 100px;
+      min-height: 100vh;
     }
     svg {
-      max-width: 100%;
-      height: auto;
+      max-width: none !important;
+      max-height: none !important;
+      width: auto !important;
+      height: auto !important;
     }
   </style>
 </head>
 <body>
 EOF
 
-        # Embed the SVG content
-        cat "$mermaid_img_dir/${imgfile}.svg" >> "$html_file"
+          # Embed the SVG content
+          cat "$mermaid_img_dir/${imgfile}.svg" >> "$html_file"
 
-        cat >> "$html_file" << 'EOF'
+          cat >> "$html_file" << 'EOF'
 </body>
 </html>
 EOF
 
-        # Use Chromium with adaptive window size (robust arithmetic)
-        # Extract SVG dimensions more reliably for window sizing
-        svg_viewbox=$(grep -o 'viewBox="[^"]*"' "$mermaid_img_dir/${imgfile}.svg" 2>/dev/null || echo 'viewBox="0 0 800 600"')
-        # Extract width and height from viewBox (format: "minX minY width height")
-        svg_dims=$(echo "$svg_viewbox" | sed 's/viewBox="\([^"]*\)"/\1/' | awk '{print $3 " " $4}' 2>/dev/null || echo "800 600")
-        svg_width=$(echo "$svg_dims" | awk '{print int($1+0.5)}' 2>/dev/null || echo "800")
-        svg_height=$(echo "$svg_dims" | awk '{print int($2+0.5)}' 2>/dev/null || echo "600")
+          # Use larger window size to prevent truncation
+          png_output=$(chromium --headless --disable-gpu --no-sandbox --disable-setuid-sandbox \
+            --window-size=2400,1800 --hide-scrollbars --disable-web-security \
+            --virtual-time-budget=8000 \
+            --force-device-scale-factor=1 \
+            --screenshot="$mermaid_img_dir/${imgfile}.png" \
+            "file://$html_file" 2>&1)
+          png_exit_code=$?
 
-        # Ensure we have valid numeric values before arithmetic
-        case "$svg_width" in
-          ''|*[!0-9]*) svg_width=800 ;;
-        esac
-        case "$svg_height" in
-          ''|*[!0-9]*) svg_height=600 ;;
-        esac
-
-        # Calculate window size with padding, ensuring reasonable bounds
-        window_width=$((svg_width + 200))
-        window_height=$((svg_height + 200))
-
-        # Ensure minimum and maximum window size
-        [ "$window_width" -lt 800 ] && window_width=800
-        [ "$window_height" -lt 600 ] && window_height=600
-        [ "$window_width" -gt 2000 ] && window_width=2000
-        [ "$window_height" -gt 1500 ] && window_height=1500
-
-        png_output=$(chromium --headless --disable-gpu --no-sandbox --disable-setuid-sandbox \
-          --window-size=${window_width},${window_height} --hide-scrollbars --disable-web-security \
-          --virtual-time-budget=5000 \
-          --force-device-scale-factor=1 \
-          --screenshot="$mermaid_img_dir/${imgfile}.png" \
-          "file://$html_file" 2>&1)
-        png_exit_code=$?
-
-        if [ $png_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
-          png_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
-          if [ "$png_size" -gt 5000 ]; then
-            png_success=true
-            info "Successfully converted to PNG with Chromium: ${imgfile}.png (${png_size} bytes)"
+          if [ $png_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
+            png_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
+            if [ "$png_size" -gt 1000 ]; then
+              png_success=true
+              info "Successfully converted to PNG with Chromium (backup): ${imgfile}.png (${png_size} bytes)"
+            else
+              info "Chromium PNG too small (${png_size} bytes)"
+            fi
+          else
+            info "Chromium conversion failed: $png_output"
           fi
-        else
-          info "Chromium conversion failed: $png_output"
-        fi
 
-        # Clean up HTML file
-        rm -f "$html_file"
+          # Clean up HTML file
+          rm -f "$html_file"
+        else
+          info "Chromium not available"
+        fi
       fi
 
-      # Method 3: Final fallback to rsvg-convert
-      if [ "$png_success" = false ]; then
-        info "Trying rsvg-convert as final fallback..."
-        png_output=$(rsvg-convert --format=png --width=1200 --height=800 --keep-aspect-ratio \
-          --dpi-x=150 --dpi-y=150 \
-          "$mermaid_img_dir/${imgfile}.svg" -o "$mermaid_img_dir/${imgfile}.png" 2>&1)
-        png_exit_code=$?
+      # Debug: Show final PNG status
+      if [ "$png_success" = true ] && [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
+        final_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
+        info "Final PNG: ${imgfile}.png (${final_size} bytes)"
 
-        if [ $png_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
-          png_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
-          if [ "$png_size" -gt 1000 ]; then
-            png_success=true
-            info "Successfully converted to PNG with rsvg-convert: ${imgfile}.png (${png_size} bytes)"
+        # Debug: Check if PNG is all black (potential detection)
+        if command -v identify >/dev/null 2>&1; then
+          png_info=$(identify "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "")
+          if [ -n "$png_info" ]; then
+            info "PNG info: $png_info"
           fi
         fi
+      else
+        error "Failed to create PNG for $imgfile"
       fi
 
       if [ "$png_success" = true ]; then
