@@ -303,15 +303,8 @@ cat > "$puppeteer_config_file" << 'EOF'
     "--no-sandbox", 
     "--disable-setuid-sandbox", 
     "--disable-dev-shm-usage", 
-    "--disable-gpu",
     "--disable-web-security",
-    "--font-render-hinting=none",
-    "--force-color-profile=srgb",
-    "--disable-features=VizDisplayCompositor",
-    "--disable-font-subpixel-positioning",
-    "--disable-background-timer-throttling",
-    "--disable-backgrounding-occluded-windows",
-    "--disable-renderer-backgrounding"
+    "--font-render-hinting=none"
   ],
   "executablePath": "/usr/bin/chromium"
 }
@@ -321,22 +314,20 @@ EOF
 mermaid_config_file="/tmp/mermaid.config.json"
 cat > "$mermaid_config_file" << 'EOF'
 {
-  "theme": "base",
+  "theme": "default",
   "themeVariables": {
     "fontFamily": "DejaVu Sans, Arial, sans-serif",
     "fontSize": "16px",
-    "primaryColor": "#000000",
+    "primaryColor": "#ffffff",
     "primaryTextColor": "#000000",
-    "secondaryColor": "#000000",
-    "tertiaryColor": "#000000"
-  },
-  "flowchart": {
-    "nodeTextColor": "#000000"
-  },
-  "sequence": {
-    "actorTextColor": "#000000",
-    "labelTextColor": "#000000",
-    "noteTextColor": "#000000"
+    "primaryBorderColor": "#000000",
+    "lineColor": "#000000",
+    "secondaryColor": "#f0f0f0",
+    "tertiaryColor": "#e0e0e0",
+    "background": "#ffffff",
+    "mainBkg": "#ffffff",
+    "secondBkg": "#f9f9f9",
+    "tertiaryBkg": "#f0f0f0"
   }
 }
 EOF
