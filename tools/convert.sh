@@ -10,17 +10,15 @@ cleanup() {
 error() {
   local line="${1}"
   local message="${2}"
+  local code=-1
   if [ $# -gt 2 ]; then
-    local code="${3}"
-  else
-    local code=-1
-        png_output=$(inkscape \
-          --export-type=png \
-          --export-area-drawing \
-          --export-dpi=150 \
-          --export-text-to-path \
-          --export-filename="$mermaid_img_dir/${imgfile}.png" \
-          "$svg_for_inkscape" 2>&1)
+    code="${3}"
+  fi
+  local line_message=""
+  if [ -n "${line}" ]; then
+    line_message=" (line ${line})"
+  fi
+  if [ ${code} -ne -1 ] && [ -n "${message}" ]; then
     message="${message} (exit code ${code})"
   else
     message="Unspecified (exit code ${code})"
