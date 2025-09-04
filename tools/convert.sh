@@ -14,12 +14,13 @@ error() {
     local code="${3}"
   else
     local code=-1
-  fi
-  local line_message=""
-  if [ "$line" != '' ]; then
-    line_message=" on or near line ${line}"
-  fi
-  if test -n "${message}"; then
+        png_output=$(inkscape \
+          --export-type=png \
+          --export-area-drawing \
+          --export-dpi=150 \
+          --export-text-to-path \
+          --export-filename="$mermaid_img_dir/${imgfile}.png" \
+          "$svg_for_inkscape" 2>&1)
     message="${message} (exit code ${code})"
   else
     message="Unspecified (exit code ${code})"
@@ -423,53 +424,74 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
       if command -v inkscape >/dev/null 2>&1; then
         info "Attempting PNG conversion with Inkscape..."
 
-        # Debug: Show Inkscape version and SVG info
+        # Sanitize SVG to remove filters that trigger black boxes in headless Inkscape (e.g., feDropShadow)
+        source_svg="$mermaid_img_dir/${imgfile}.svg"
+        sanitized_svg="/tmp/${imgfile}_sanitized.svg"
+        cp "$source_svg" "$sanitized_svg" 2>/dev/null || true
+        if [ -f "$sanitized_svg" ]; then
+          pre_filter_count=$(grep -c "<filter" "$sanitized_svg" 2>/dev/null || echo "0")
+          sed -i '/<filter[[:space:]]/,/<\/filter>/d' "$sanitized_svg" 2>/dev/null || true
+          sed -i -E 's/[[:space:]]filter="url\(#[-A-Za-z0-9_]+\)"//g' "$sanitized_svg" 2>/dev/null || true
+          sed -i '/<feDropShadow[[:space:]]/d' "$sanitized_svg" 2>/dev/null || true
+          post_filter_count=$(grep -c "<filter" "$sanitized_svg" 2>/dev/null || echo "0")
+          removed=$(( pre_filter_count - post_filter_count ))
+          if [ "$removed" -gt 0 ]; then
+            info "Sanitized SVG: removed $removed filter definitions for $imgfile"
+          fi
+        fi
+        svg_for_inkscape="$sanitized_svg"
+        [ -s "$svg_for_inkscape" ] || svg_for_inkscape="$source_svg"
+
+        # Debug: Show Inkscape version and first lines
         inkscape_version=$(inkscape --version 2>&1 | head -1)
         info "Debug: Using $inkscape_version"
+        head -n 4 "$svg_for_inkscape" 2>/dev/null | sed 's/^/      /'
 
-        # Try different Inkscape approaches to fix black box issue
-        # Approach 1: Minimal parameters with explicit area
+        # Approach 1
         png_output=$(inkscape \
           --export-type=png \
           --export-area-drawing \
           --export-dpi=150 \
+          --export-text-to-path \
           --export-filename="$mermaid_img_dir/${imgfile}.png" \
-          "$mermaid_img_dir/${imgfile}.svg" 2>&1)
+          "$svg_for_inkscape" 2>&1)
         png_exit_code=$?
 
         if [ $png_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
           png_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
-          if [ "$png_size" -gt 1000 ]; then
+          if [ "$png_size" -gt 1500 ]; then
             png_success=true
             info "Successfully converted to PNG with Inkscape (approach 1): ${imgfile}.png (${png_size} bytes)"
           else
-            info "Inkscape approach 1 produced small file (${png_size} bytes), trying approach 2..."
+            info "Inkscape approach 1 small (${png_size} bytes) trying approach 2..."
+          fi
+        else
+          info "Inkscape approach 1 failed: $png_output"
+        fi
 
-            # Approach 2: With background settings but different parameters
+        if [ "$png_success" = false ]; then
+          # Approach 2
             png_output=$(inkscape \
               --export-type=png \
               --export-area-page \
               --export-background=white \
               --export-background-opacity=1.0 \
               --export-dpi=150 \
+              --export-text-to-path \
               --export-filename="$mermaid_img_dir/${imgfile}.png" \
-              "$mermaid_img_dir/${imgfile}.svg" 2>&1)
+              "$svg_for_inkscape" 2>&1)
             png_exit_code=$?
-
             if [ $png_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
               png_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
-              if [ "$png_size" -gt 1000 ]; then
+              if [ "$png_size" -gt 1500 ]; then
                 png_success=true
                 info "Successfully converted to PNG with Inkscape (approach 2): ${imgfile}.png (${png_size} bytes)"
               else
-                info "Inkscape approach 2 also small (${png_size} bytes), will try Chromium backup..."
+                info "Inkscape approach 2 also small (${png_size} bytes)"
               fi
             else
               info "Inkscape approach 2 failed: $png_output"
             fi
-          fi
-        else
-          info "Inkscape approach 1 failed: $png_output"
         fi
       else
         info "Inkscape not available, trying other methods..."
