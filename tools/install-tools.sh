@@ -100,3 +100,10 @@ else
   echo 'Unable to find apt-get or apk!'
   exit 1
 fi
+# Set Puppeteer to use system Chromium if available
+if [ -x /usr/bin/chromium-browser ]; then
+  export PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+elif [ -x /usr/bin/chromium ]; then
+  export PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+fi
+echo \"export PUPPETEER_EXECUTABLE_PATH=\\\"$PUPPETEER_EXECUTABLE_PATH\\\"\" >> \"$GITHUB_ENV\"
