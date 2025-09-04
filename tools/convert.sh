@@ -437,15 +437,22 @@ if test -n "${mdContent}"; then
     # Can be re-enabled when the LaTeX template compatibility is resolved
     filter_args=""
     warning "pandoc-latex-environment filter disabled due to LaTeX compatibility issues"
+    
+    # Debug: Check what's in the markdown content for any pandoc-specific syntax
+    info "Debug: Checking for pandoc-latex-environment syntax in markdown"
+    if echo "${mdContent}" | grep -q ":::"; then
+      warning "Found ::: syntax in markdown, but pandoc-latex-environment filter is disabled"
+    fi
 
     echo "${mdContent}" | pandoc \
       --standalone \
       --listings \
       --pdf-engine=xelatex \
       --metadata-file="${DocsPath}/metadata.json" \
-      -f markdown+backtick_code_blocks+pipe_tables+auto_identifiers+yaml_metadata_block+table_captions+footnotes+smart+escaped_line_breaks \
+      -f markdown+backtick_code_blocks+pipe_tables+auto_identifiers+yaml_metadata_block+table_captions+footnotes+smart \
       --template="${templateFilePath}" \
       ${filter_args} \
+      --verbose \
       --output="${OutFile}"
     cd "${currentPath}"
   fi
