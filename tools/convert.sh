@@ -437,7 +437,7 @@ if test -n "${mdContent}"; then
     # Can be re-enabled when the LaTeX template compatibility is resolved
     filter_args=""
     warning "pandoc-latex-environment filter disabled due to LaTeX compatibility issues"
-    
+
     # Debug: Check what's in the markdown content for any pandoc-specific syntax
     info "Debug: Checking for pandoc-latex-environment syntax in markdown"
     if echo "${mdContent}" | grep -q ":::"; then
