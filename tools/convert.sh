@@ -425,73 +425,43 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
 
       # Create a minimal HTML wrapper for the SVG
       html_file="/tmp/mermaid_${imgfile}.html"
-
-      # First, get the SVG dimensions to set proper viewport
-      svg_width=$(grep -o 'viewBox="[^"]*"' "$mermaid_img_dir/${imgfile}.svg" | sed 's/viewBox="[0-9]* [0-9]* \([0-9]*\) \([0-9]*\)"/\1/' || echo "400")
-      svg_height=$(grep -o 'viewBox="[^"]*"' "$mermaid_img_dir/${imgfile}.svg" | sed 's/viewBox="[0-9]* [0-9]* \([0-9]* \)\([0-9]*\)"/\2/' || echo "300")
-
-      # Calculate window size with padding
-      window_width=$((svg_width + 100))
-      window_height=$((svg_height + 100))
-
-      # Ensure minimum window size
-      [ "$window_width" -lt 600 ] && window_width=600
-      [ "$window_height" -lt 400 ] && window_height=400
-
-      # Cap maximum window size to reasonable limits
-      [ "$window_width" -gt 1600 ] && window_width=1600
-      [ "$window_height" -gt 1200 ] && window_height=1200
-
       cat > "$html_file" << 'EOF'
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <style>
-    * { box-sizing: border-box; }
-    html, body {
+    body {
       margin: 0;
-      padding: 0;
-      width: 100vw;
-      height: 100vh;
-      overflow: hidden;
+      padding: 40px;
       font-family: Arial, sans-serif;
       background: white;
-    }
-    .container {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 50px;
+      min-height: 100vh;
+      box-sizing: border-box;
     }
     svg {
-      max-width: 100%;
-      max-height: 100%;
+      max-width: calc(100% - 80px);
       height: auto;
-      width: auto;
+      display: block;
+      margin: 0 auto;
     }
   </style>
 </head>
 <body>
-<div class="container">
 EOF
 
       # Embed the SVG content
       cat "$mermaid_img_dir/${imgfile}.svg" >> "$html_file"
 
       cat >> "$html_file" << 'EOF'
-</div>
 </body>
 </html>
 EOF
 
-      # Use Chromium to take a screenshot with dynamic sizing
-      info "Using window size: ${window_width}x${window_height}"
+      # Use Chromium to take a screenshot
       png_output=$(chromium --headless --disable-gpu --no-sandbox --disable-setuid-sandbox \
-        --window-size=${window_width},${window_height} --hide-scrollbars --disable-web-security \
-        --virtual-time-budget=5000 \
+        --window-size=1400,1000 --hide-scrollbars --disable-web-security \
+        --virtual-time-budget=3000 \
         --force-device-scale-factor=1 \
         --screenshot="$mermaid_img_dir/${imgfile}.png" \
         "file://$html_file" 2>&1)
