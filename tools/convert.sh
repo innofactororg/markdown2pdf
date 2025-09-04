@@ -426,6 +426,9 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
       # Create a minimal HTML wrapper for the SVG
       html_file="/tmp/mermaid_${imgfile}.html"
       cat > "$html_file" << 'EOF'
+# Create a minimal HTML wrapper for the SVG that doesn't add extra whitespace
+      html_file="/tmp/mermaid_${imgfile}.html"
+      cat > "$html_file" << 'EOF'
 <!DOCTYPE html>
 <html>
 <head>
@@ -440,26 +443,22 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
       justify-content: center;
       align-items: center;
       box-sizing: border-box;
-      height: 100vh;
-      overflow: hidden;
+      overflow: visible;
     }
     .container {
-      padding: 40px;
-      max-width: 100%;
-      max-height: 100%;
-      overflow: visible;
+      padding: 10px;
+      margin: 0;
+      display: inline-block;
     }
     svg {
       display: block;
-      max-width: 100%;
-      height: auto;
-      /* Preserve aspect ratio */
-      width: auto\9; /* For IE8 */
+      width: 100%;
+      height: 100%;
     }
   </style>
 </head>
 <body>
-<div class="container">
+<div class="container">'
 EOF
 
       # Embed the SVG content
@@ -475,42 +474,61 @@ EOF
       viewbox=$(grep -o 'viewBox="[^"]*"' "$mermaid_img_dir/${imgfile}.svg" | sed 's/viewBox="//g' | sed 's/"//g' | head -1)
       if [ -n "$viewbox" ]; then
         # Extract width and height from viewBox - using awk to handle floating point values safely
+        # The viewBox format is "x y width height", we need the width and height (3rd and 4th values)
+        svg_x=$(echo "$viewbox" | awk '{print int($1)}')
+        svg_y=$(echo "$viewbox" | awk '{print int($2)}')
         svg_width=$(echo "$viewbox" | awk '{print int($3)}')
         svg_height=$(echo "$viewbox" | awk '{print int($4)}')
-        
-        # Make sure we got numeric values (use shell test for numeric)
+
+        # Make sure we got numeric values
         if echo "$svg_width" | grep -qE '^[0-9]+$' && echo "$svg_height" | grep -qE '^[0-9]+$'; then
           # Verify dimensions are reasonable
           if [ "$svg_width" -gt 0 ] && [ "$svg_height" -gt 0 ]; then
-            # Add padding to dimensions (100px on each side)
-            chrome_width=$((svg_width + 200))
-            chrome_height=$((svg_height + 200))
+            # Scale up the diagram for better readability - multiply by 1.5
+            chrome_width=$((svg_width * 3 / 2))
+            chrome_height=$((svg_height * 3 / 2))
+
+            # Ensure minimum size (prevents tiny diagrams)
+            if [ "$chrome_width" -lt 800 ]; then
+              chrome_width=800
+            fi
+            if [ "$chrome_height" -lt 600 ]; then
+              chrome_height=600
+            fi
+
+            # Update the SVG directly to ensure it scales properly
+            sed -i "s/width=\"[^\"]*\"/width=\"${chrome_width}\"/" "$mermaid_img_dir/${imgfile}.svg"
+            sed -i "s/height=\"[^\"]*\"/height=\"${chrome_height}\"/" "$mermaid_img_dir/${imgfile}.svg"
+
             info "Setting Chromium window size to ${chrome_width}x${chrome_height} based on SVG viewBox"
           else
             # Default values if dimensions are too small
-            chrome_width=1400
-            chrome_height=1000
+            chrome_width=1200
+            chrome_height=900
             info "SVG dimensions too small (width=${svg_width}, height=${svg_height}), using default window size ${chrome_width}x${chrome_height}"
           fi
         else
           # Default values if dimensions are not numeric
-          chrome_width=1400
-          chrome_height=1000
+          chrome_width=1200
+          chrome_height=900
           info "Non-numeric SVG dimensions (width=${svg_width}, height=${svg_height}), using default window size ${chrome_width}x${chrome_height}"
         fi
       else
         # Default values if viewBox extraction fails
-        chrome_width=1400
-        chrome_height=1000
+        chrome_width=1200
+        chrome_height=900
         info "Could not extract SVG viewBox, using default window size ${chrome_width}x${chrome_height}"
       fi
-      
+
       # Use Chromium to take a screenshot with dimensions based on the SVG content
+      # Using --screenshot with specific clipping area to eliminate extra whitespace
       png_output=$(chromium --headless --disable-gpu --no-sandbox --disable-setuid-sandbox \
         --window-size=${chrome_width},${chrome_height} --hide-scrollbars --disable-web-security \
-        --virtual-time-budget=3000 \
-        --force-device-scale-factor=1 \
+        --virtual-time-budget=5000 \
+        --force-device-scale-factor=2 \
         --screenshot="$mermaid_img_dir/${imgfile}.png" \
+        --no-margins \
+        --clip-rect=0,0,${chrome_width},${chrome_height} \
         "file://$html_file" 2>&1)
       png_exit_code=$?
 
@@ -532,23 +550,35 @@ EOF
       # Method 2: Fallback to rsvg-convert only if Chromium failed
       if [ "$png_success" = false ]; then
         info "Trying rsvg-convert as fallback..."
-        
+
         # Use the same dimensions we calculated for Chromium if available
-        if [ -n "$viewbox" ] && [ -n "$svg_width" ] && [ -n "$svg_height" ] && 
-           echo "$svg_width" | grep -qE '^[0-9]+$' && echo "$svg_height" | grep -qE '^[0-9]+$' && 
+        if [ -n "$viewbox" ] && [ -n "$svg_width" ] && [ -n "$svg_height" ] &&
+           echo "$svg_width" | grep -qE '^[0-9]+$' && echo "$svg_height" | grep -qE '^[0-9]+$' &&
            [ "$svg_width" -gt 0 ] && [ "$svg_height" -gt 0 ]; then
-          # For rsvg-convert, use the actual SVG dimensions with a bit higher DPI for better quality
-          info "Using SVG dimensions for rsvg-convert: ${svg_width}x${svg_height}"
+          # For rsvg-convert, use scaled dimensions (1.5x) with higher DPI for better quality
+          rsvg_width=$((svg_width * 3 / 2))
+          rsvg_height=$((svg_height * 3 / 2))
+          # Ensure minimum size
+          if [ "$rsvg_width" -lt 800 ]; then
+            rsvg_width=800
+          fi
+          if [ "$rsvg_height" -lt 600 ]; then
+            rsvg_height=600
+          fi
+
+          info "Using scaled SVG dimensions for rsvg-convert: ${rsvg_width}x${rsvg_height}"
           png_output=$(rsvg-convert --format=png --keep-aspect-ratio \
-            --width="$svg_width" --height="$svg_height" \
-            --dpi-x=150 --dpi-y=150 \
+            --width="$rsvg_width" --height="$rsvg_height" \
+            --dpi-x=300 --dpi-y=300 \
+            --background-color=white \
             "$mermaid_img_dir/${imgfile}.svg" -o "$mermaid_img_dir/${imgfile}.png" 2>&1)
         else
           # Default values if dimensions aren't available or invalid
           info "Using default dimensions for rsvg-convert"
           png_output=$(rsvg-convert --format=png --keep-aspect-ratio \
-            --width=1200 --height=800 \
-            --dpi-x=150 --dpi-y=150 \
+            --width=1200 --height=900 \
+            --dpi-x=300 --dpi-y=300 \
+            --background-color=white \
             "$mermaid_img_dir/${imgfile}.svg" -o "$mermaid_img_dir/${imgfile}.png" 2>&1)
         fi
         png_exit_code=$?
