@@ -433,14 +433,17 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
   <style>
     body { 
       margin: 0; 
-      padding: 20px; 
+      padding: 40px; 
       font-family: Arial, sans-serif; 
       background: white;
+      min-height: 100vh;
+      box-sizing: border-box;
     }
     svg { 
-      max-width: 100%; 
+      max-width: calc(100% - 80px); 
       height: auto; 
       display: block;
+      margin: 0 auto;
     }
   </style>
 </head>
@@ -457,8 +460,9 @@ EOF
       
       # Use Chromium to take a screenshot
       png_output=$(chromium --headless --disable-gpu --no-sandbox --disable-setuid-sandbox \
-        --window-size=1200,800 --hide-scrollbars --disable-web-security \
-        --virtual-time-budget=2000 \
+        --window-size=1400,1000 --hide-scrollbars --disable-web-security \
+        --virtual-time-budget=3000 \
+        --force-device-scale-factor=1 \
         --screenshot="$mermaid_img_dir/${imgfile}.png" \
         "file://$html_file" 2>&1)
       png_exit_code=$?
