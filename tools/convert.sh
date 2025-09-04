@@ -401,16 +401,18 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
     if [ $mmdc_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.svg" ]; then
       info "Successfully rendered mermaid diagram: $imgfile"
       # Debug: Check if SVG contains text elements and show sample text
-      text_count=$(grep -c "<text" "$mermaid_img_dir/${imgfile}.svg" || echo "0")
+      text_count=$(grep -c "<text" "$mermaid_img_dir/${imgfile}.svg" 2>/dev/null || echo "0")
+      # Ensure we have a valid integer
+      text_count=${text_count:-0}
       info "Debug: SVG contains $text_count text elements"
       if [ "$text_count" -gt 0 ]; then
-        sample_text=$(grep -o "<text[^>]*>[^<]*</text>" "$mermaid_img_dir/${imgfile}.svg" | head -3 | sed 's/<[^>]*>//g' | tr '\n' ' ')
+        sample_text=$(grep -o "<text[^>]*>[^<]*</text>" "$mermaid_img_dir/${imgfile}.svg" 2>/dev/null | head -3 | sed 's/<[^>]*>//g' | tr '\n' ' ')
         info "Debug: Sample text content: $sample_text"
       else
         warning "Warning: SVG file contains no text elements, text may not be visible"
         # Show a bit of the SVG structure for debugging
         info "Debug: SVG structure preview:"
-        head -20 "$mermaid_img_dir/${imgfile}.svg" | grep -E "<(g|rect|path|circle|text)"
+        head -20 "$mermaid_img_dir/${imgfile}.svg" | grep -E "<(g|rect|path|circle|text)" 2>/dev/null || true
       fi
 
       # Convert SVG to PNG to ensure text is preserved in PDF
@@ -426,16 +428,21 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
         source_svg="$mermaid_img_dir/${imgfile}.svg"
         sanitized_svg="/tmp/${imgfile}_sanitized.svg"
         plain_svg="/tmp/${imgfile}_plain.svg"
-        
+
         # Copy the source SVG to sanitized version
         cp "$source_svg" "$sanitized_svg" 2>/dev/null || true
-        
+
         if [ -f "$sanitized_svg" ]; then
           # First stage: Remove problematic elements that cause black box rendering
           pre_filter_count=$(grep -c "<filter" "$sanitized_svg" 2>/dev/null || echo "0")
           pre_clippath_count=$(grep -c "<clipPath" "$sanitized_svg" 2>/dev/null || echo "0")
           pre_mask_count=$(grep -c "<mask" "$sanitized_svg" 2>/dev/null || echo "0")
-          
+
+          # Ensure we have valid integers for arithmetic
+          pre_filter_count=${pre_filter_count:-0}
+          pre_clippath_count=${pre_clippath_count:-0}
+          pre_mask_count=${pre_mask_count:-0}
+
           # Remove filter elements completely
           sed -i '/<filter[[:space:]]/,/<\/filter>/d' "$sanitized_svg" 2>/dev/null || true
           # Remove filter references
@@ -447,30 +454,48 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
           sed -i '/<feComposite[[:space:]]/d' "$sanitized_svg" 2>/dev/null || true
           sed -i '/<feMerge[[:space:]]/d' "$sanitized_svg" 2>/dev/null || true
           sed -i '/<feMergeNode[[:space:]]/d' "$sanitized_svg" 2>/dev/null || true
-          
+
           # Remove clipPath elements
           sed -i '/<clipPath[[:space:]]/,/<\/clipPath>/d' "$sanitized_svg" 2>/dev/null || true
           sed -i -E 's/[[:space:]]clip-path="url\(#[-A-Za-z0-9_]+\)"//g' "$sanitized_svg" 2>/dev/null || true
-          
+
           # Remove mask elements
           sed -i '/<mask[[:space:]]/,/<\/mask>/d' "$sanitized_svg" 2>/dev/null || true
           sed -i -E 's/[[:space:]]mask="url\(#[-A-Za-z0-9_]+\)"//g' "$sanitized_svg" 2>/dev/null || true
-          
+
           # Log counts
           post_filter_count=$(grep -c "<filter" "$sanitized_svg" 2>/dev/null || echo "0")
           post_clippath_count=$(grep -c "<clipPath" "$sanitized_svg" 2>/dev/null || echo "0")
           post_mask_count=$(grep -c "<mask" "$sanitized_svg" 2>/dev/null || echo "0")
-          
-          removed_filters=$((pre_filter_count - post_filter_count))
-          removed_clippaths=$((pre_clippath_count - post_clippath_count))
-          removed_masks=$((pre_mask_count - post_mask_count))
-          
+
+          # Ensure we have valid integers for arithmetic
+          post_filter_count=${post_filter_count:-0}
+          post_clippath_count=${post_clippath_count:-0}
+          post_mask_count=${post_mask_count:-0}
+
+          # Safely perform arithmetic operations with error handling
+          removed_filters=0
+          removed_clippaths=0
+          removed_masks=0
+
+          if [ "$pre_filter_count" -ge "$post_filter_count" ]; then
+            removed_filters=$((pre_filter_count - post_filter_count))
+          fi
+
+          if [ "$pre_clippath_count" -ge "$post_clippath_count" ]; then
+            removed_clippaths=$((pre_clippath_count - post_clippath_count))
+          fi
+
+          if [ "$pre_mask_count" -ge "$post_mask_count" ]; then
+            removed_masks=$((pre_mask_count - post_mask_count))
+          fi
+
           total_removed=$((removed_filters + removed_clippaths + removed_masks))
-          
+
           if [ "$total_removed" -gt 0 ]; then
             info "Sanitized SVG: removed $removed_filters filters, $removed_clippaths clip paths, $removed_masks masks for $imgfile"
           fi
-          
+
           # Second stage: Use Inkscape to create a "plain SVG" format which is more compatible
           if [ -s "$sanitized_svg" ]; then
             info "Creating plain SVG format for better compatibility..."
@@ -487,7 +512,7 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
         else
           svg_for_inkscape="$source_svg"
         fi
-        
+
         # Ensure we have a valid SVG to work with
         [ -s "$svg_for_inkscape" ] || svg_for_inkscape="$source_svg"
 
@@ -539,7 +564,7 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
                 info "Successfully converted to PNG with Inkscape (approach 2): ${imgfile}.png (${png_size} bytes)"
               else
                 info "Inkscape approach 2 also small (${png_size} bytes), trying approach 3..."
-                
+
                 # Approach 3: Last resort - render with forced bitmap conversion
                 png_output=$(inkscape \
                   --export-type=png \
@@ -552,7 +577,7 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
                   --export-filename="$mermaid_img_dir/${imgfile}.png" \
                   "$source_svg" 2>&1)
                 png_exit_code=$?
-                
+
                 if [ $png_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
                   png_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
                   if [ "$png_size" -gt 1500 ]; then
@@ -651,7 +676,7 @@ EOF
       if [ "$png_success" = true ] && [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
         final_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
         info "Final PNG: ${imgfile}.png (${final_size} bytes)"
-        
+
         # Verify PNG has meaningful content - not just black
         if command -v file >/dev/null 2>&1; then
           file_info=$(file "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "")
@@ -659,11 +684,13 @@ EOF
             info "PNG file info: $file_info"
           fi
         fi
-        
+
         # Attempt to analyze the image content with additional tools if available
         if command -v hexdump >/dev/null 2>&1; then
           # Sample a small piece of the PNG to look for all black (experimental)
-          black_sample=$(hexdump -n 100 -e '1/1 "%02x"' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null | grep -c "000000" || echo "0")
+          black_sample=$(hexdump -n 100 -e '1/1 "%02x"' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null | grep -c "000000" 2>/dev/null || echo "0")
+          # Ensure we have a valid integer
+          black_sample=${black_sample:-0}
           if [ "$black_sample" -gt 30 ]; then
             warning "PNG may contain mostly black pixels, check final PDF output"
           fi
