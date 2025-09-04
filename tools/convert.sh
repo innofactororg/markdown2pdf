@@ -309,26 +309,21 @@ awk_script='BEGIN{inblock=0;imgidx=0;}
 {
   if ($0 ~ /^```mermaid[[:space:]]*$/) {
     inblock=1;
-    imgfile=sprintf("MERMAID_PLACEHOLDER_%d", ++imgidx);
+    imgidx++;
+    imgfile=sprintf("MERMAID_PLACEHOLDER_%d", imgidx);
     print imgfile > "/tmp/mermaid_imglist.txt";
-    code="";
+    # Clear any previous content and start fresh
+    system("rm -f /tmp/mermaid_" imgfile ".mmd");
     next;
   }
   if (inblock && $0 ~ /^```[[:space:]]*$/) {
     inblock=0;
     print "![](mermaid-imgs/" imgfile ".svg)";
-    # Write the code content to file
-    printf "%s", code > "/tmp/mermaid_" imgfile ".mmd";
-    close("/tmp/mermaid_" imgfile ".mmd");
-    code="";  # Reset code variable
     next;
   }
   if (inblock) {
-    if (code == "") {
-      code = $0;
-    } else {
-      code = code "\n" $0;
-    }
+    # Write each line directly to the file
+    print $0 >> "/tmp/mermaid_" imgfile ".mmd";
     next;
   }
   print;
@@ -414,13 +409,6 @@ set_metadataContent <<META_DATA || true
   "logo": "${templateLogoFilePath}",
   "lot": false,
   "mainfont": "Carlito",
-  "pandoc-latex-environment": {
-    "warningblock": ["warning"],
-    "importantblock": ["important"],
-    "noteblock": ["note"],
-    "cautionblock": ["caution"],
-    "tipblock": ["tip"]
-  },
   "project": "${Project}",
   "subtitle": "${Subtitle}",
   "table-use-row-colors": false,
