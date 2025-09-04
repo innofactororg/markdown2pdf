@@ -98,6 +98,15 @@ elif type apk > /dev/null 2>&1; then
   if ! test -f '/usr/share/fonts/carlito/Carlito-Regular.ttf'; then
     apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community font-carlito
   fi
+  # Install additional fonts commonly used by Mermaid
+  apk add --no-cache ttf-dejavu ttf-liberation fontconfig || echo "Warning: Could not install additional fonts"
+  # Install font-misc-misc for additional fallback fonts
+  apk add --no-cache font-misc-misc || echo "Warning: Could not install misc fonts"
+  # Refresh font cache
+  fc-cache -f -v || echo "Warning: Could not refresh font cache"
+  # Debug: List available fonts for Mermaid
+  echo "Available fonts for Mermaid rendering:"
+  fc-list | grep -i -E "(dejavu|liberation|arial|carlito)" | head -10 || echo "No matching fonts found"
 #  if type tlmgr > /dev/null 2>&1 && ! test -f '/opt/texlive/texdir/texmf-dist/tex/latex/lastpage/lastpage.sty'; then
 #    tlmgr update --self
 #    tlmgr option -- autobackup -1

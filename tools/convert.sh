@@ -299,8 +299,45 @@ mkdir -p "$mermaid_img_dir"
 puppeteer_config_file="/tmp/puppeteer.config.json"
 cat > "$puppeteer_config_file" << 'EOF'
 {
-  "args": ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
+  "args": [
+    "--no-sandbox", 
+    "--disable-setuid-sandbox", 
+    "--disable-dev-shm-usage", 
+    "--disable-gpu",
+    "--disable-web-security",
+    "--font-render-hinting=none",
+    "--force-color-profile=srgb",
+    "--disable-features=VizDisplayCompositor",
+    "--disable-font-subpixel-positioning",
+    "--disable-background-timer-throttling",
+    "--disable-backgrounding-occluded-windows",
+    "--disable-renderer-backgrounding"
+  ],
   "executablePath": "/usr/bin/chromium"
+}
+EOF
+
+# Create Mermaid config file to ensure proper font rendering
+mermaid_config_file="/tmp/mermaid.config.json"
+cat > "$mermaid_config_file" << 'EOF'
+{
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "DejaVu Sans, Arial, sans-serif",
+    "fontSize": "16px",
+    "primaryColor": "#000000",
+    "primaryTextColor": "#000000",
+    "secondaryColor": "#000000",
+    "tertiaryColor": "#000000"
+  },
+  "flowchart": {
+    "nodeTextColor": "#000000"
+  },
+  "sequence": {
+    "actorTextColor": "#000000",
+    "labelTextColor": "#000000",
+    "noteTextColor": "#000000"
+  }
 }
 EOF
 
@@ -368,11 +405,23 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
     fi
 
     # Try to run mmdc with explicit error output and puppeteer config
-    mmdc_output=$(mmdc -i "/tmp/mermaid_${imgfile}.mmd" -o "$mermaid_img_dir/${imgfile}.svg" --puppeteerConfigFile "$puppeteer_config_file" 2>&1)
+    # Add scale and font options for better text rendering
+    mmdc_output=$(mmdc -i "/tmp/mermaid_${imgfile}.mmd" -o "$mermaid_img_dir/${imgfile}.svg" \
+      --puppeteerConfigFile "$puppeteer_config_file" \
+      --configFile "$mermaid_config_file" \
+      --scale 2 \
+      --backgroundColor white \
+      --cssFile /dev/null 2>&1)
     mmdc_exit_code=$?
 
     if [ $mmdc_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.svg" ]; then
       info "Successfully rendered mermaid diagram: $imgfile"
+      # Debug: Check if SVG contains text elements
+      text_count=$(grep -c "<text" "$mermaid_img_dir/${imgfile}.svg" || echo "0")
+      info "Debug: SVG contains $text_count text elements"
+      if [ "$text_count" -eq 0 ]; then
+        warning "Warning: SVG file contains no text elements, text may not be visible"
+      fi
     else
       warning "Failed to render mermaid diagram: $imgfile (exit code: $mmdc_exit_code)"
       info "mmdc output: $mmdc_output"
