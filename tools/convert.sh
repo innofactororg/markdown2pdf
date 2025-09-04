@@ -295,6 +295,15 @@ fi
 mermaid_img_dir="${DocsPath}/mermaid-imgs"
 mkdir -p "$mermaid_img_dir"
 
+# Create puppeteer config file for mmdc
+puppeteer_config_file="/tmp/puppeteer.config.json"
+cat > "$puppeteer_config_file" << 'EOF'
+{
+  "args": ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
+  "executablePath": "/usr/bin/chromium"
+}
+EOF
+
 # Use awk to extract and replace mermaid code blocks
 awk_script='BEGIN{inblock=0;imgidx=0;}
 {
@@ -325,12 +334,34 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
   # Ensure Puppeteer environment is set for mmdc
   export PUPPETEER_EXECUTABLE_PATH="${PUPPETEER_EXECUTABLE_PATH:-/usr/bin/chromium}"
   export PUPPETEER_ARGS="${PUPPETEER_ARGS:---no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu}"
-  
+
+  # Debug: Check if mmdc and chromium are available
+  info "Debug: PUPPETEER_EXECUTABLE_PATH=$PUPPETEER_EXECUTABLE_PATH"
+  info "Debug: PUPPETEER_ARGS=$PUPPETEER_ARGS"
+  if command -v mmdc >/dev/null 2>&1; then
+    info "Debug: mmdc found at $(which mmdc)"
+  else
+    warning "Debug: mmdc not found in PATH"
+  fi
+  if [ -x "$PUPPETEER_EXECUTABLE_PATH" ]; then
+    info "Debug: Chromium found at $PUPPETEER_EXECUTABLE_PATH"
+  else
+    warning "Debug: Chromium not found at $PUPPETEER_EXECUTABLE_PATH"
+  fi
+
   while read -r imgfile; do
-    if mmdc -i "/tmp/mermaid_${imgfile}.mmd" -o "$mermaid_img_dir/${imgfile}.svg" 2>/dev/null; then
+    info "Debug: Rendering $imgfile with content:"
+    cat "/tmp/mermaid_${imgfile}.mmd"
+
+    # Try to run mmdc with explicit error output and puppeteer config
+    mmdc_output=$(mmdc -i "/tmp/mermaid_${imgfile}.mmd" -o "$mermaid_img_dir/${imgfile}.svg" --puppeteerConfigFile "$puppeteer_config_file" 2>&1)
+    mmdc_exit_code=$?
+
+    if [ $mmdc_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.svg" ]; then
       info "Successfully rendered mermaid diagram: $imgfile"
     else
-      warning "Failed to render mermaid diagram: $imgfile, skipping..."
+      warning "Failed to render mermaid diagram: $imgfile (exit code: $mmdc_exit_code)"
+      info "mmdc output: $mmdc_output"
       # Create a placeholder text file so the image link doesn't break completely
       echo "Mermaid diagram could not be rendered" > "$mermaid_img_dir/${imgfile}.txt"
     fi
@@ -406,7 +437,7 @@ if test -n "${mdContent}"; then
     cd "${currentPath}"
   fi
   # Clean up temp files
-  rm -f /tmp/mermaid_imglist.txt /tmp/mermaid_*.mmd
+  rm -f /tmp/mermaid_imglist.txt /tmp/mermaid_*.mmd "$puppeteer_config_file"
   if ! test -f "${OutFile}"; then
     warning "Unable to create ${OutFile}"
   else
