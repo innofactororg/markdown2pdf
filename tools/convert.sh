@@ -417,63 +417,82 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
       # Convert SVG to PNG to ensure text is preserved in PDF
       info "Converting SVG to PNG for better PDF compatibility..."
       
-      # Try multiple conversion approaches for better text rendering
+      # Try Chromium-based conversion first (most reliable for text)
       png_success=false
       
-      # First try: rsvg-convert with explicit font path and text rendering options
+      # Method 1: Use Chromium to render SVG directly to PNG
+      info "Attempting PNG conversion with Chromium..."
+      
+      # Create a minimal HTML wrapper for the SVG
+      html_file="/tmp/mermaid_${imgfile}.html"
+      cat > "$html_file" << 'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { 
+      margin: 0; 
+      padding: 20px; 
+      font-family: Arial, sans-serif; 
+      background: white;
+    }
+    svg { 
+      max-width: 100%; 
+      height: auto; 
+      display: block;
+    }
+  </style>
+</head>
+<body>
+EOF
+      
+      # Embed the SVG content
+      cat "$mermaid_img_dir/${imgfile}.svg" >> "$html_file"
+      
+      cat >> "$html_file" << 'EOF'
+</body>
+</html>
+EOF
+      
+      # Use Chromium to take a screenshot
+      png_output=$(chromium --headless --disable-gpu --no-sandbox --disable-setuid-sandbox \
+        --window-size=1200,800 --hide-scrollbars --disable-web-security \
+        --virtual-time-budget=2000 \
+        --screenshot="$mermaid_img_dir/${imgfile}.png" \
+        "file://$html_file" 2>&1)
+      png_exit_code=$?
+      
+      if [ $png_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
+        png_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
+        if [ "$png_size" -gt 5000 ]; then  # Reasonable size check
+          png_success=true
+          info "Successfully converted to PNG with Chromium: ${imgfile}.png (${png_size} bytes)"
+        else
+          info "Chromium PNG too small (${png_size} bytes), trying rsvg-convert..."
+        fi
+      else
+        info "Chromium conversion failed: $png_output"
+      fi
+      
+      # Clean up HTML file
+      rm -f "$html_file"
+      
+      # Method 2: Fallback to rsvg-convert only if Chromium failed
       if [ "$png_success" = false ]; then
+        info "Trying rsvg-convert as fallback..."
         png_output=$(rsvg-convert --format=png --width=1200 --height=800 --keep-aspect-ratio \
           --dpi-x=150 --dpi-y=150 \
           "$mermaid_img_dir/${imgfile}.svg" -o "$mermaid_img_dir/${imgfile}.png" 2>&1)
         png_exit_code=$?
         
         if [ $png_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
-          # Check if PNG has reasonable file size (indicates content was rendered)
           png_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
           if [ "$png_size" -gt 1000 ]; then
             png_success=true
             info "Successfully converted to PNG with rsvg-convert: ${imgfile}.png (${png_size} bytes)"
           fi
         fi
-      fi
-      
-      # Second try: Use Chromium/Puppeteer to render PNG directly (more reliable for complex SVGs)
-      if [ "$png_success" = false ]; then
-        info "Retrying PNG conversion with Chromium..."
-        # Create a simple HTML wrapper for the SVG
-        html_file="/tmp/mermaid_${imgfile}.html"
-        cat > "$html_file" << EOF
-<!DOCTYPE html>
-<html>
-<head>
-  <style>
-    body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
-    svg { max-width: 100%; height: auto; }
-  </style>
-</head>
-<body>
-$(cat "$mermaid_img_dir/${imgfile}.svg")
-</body>
-</html>
-EOF
-        
-        # Use Chromium to take a screenshot of the HTML (which includes the SVG)
-        png_output=$(chromium --headless --disable-gpu --no-sandbox --disable-setuid-sandbox \
-          --window-size=1200,800 --hide-scrollbars \
-          --screenshot="$mermaid_img_dir/${imgfile}.png" \
-          "file://$html_file" 2>&1)
-        png_exit_code=$?
-        
-        if [ $png_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
-          png_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
-          if [ "$png_size" -gt 1000 ]; then
-            png_success=true
-            info "Successfully converted to PNG with Chromium: ${imgfile}.png (${png_size} bytes)"
-          fi
-        fi
-        
-        # Clean up HTML file
-        rm -f "$html_file"
       fi
       
       if [ "$png_success" = true ]; then
