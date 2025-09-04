@@ -401,7 +401,8 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
     if [ $mmdc_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.svg" ]; then
       info "Successfully rendered mermaid diagram: $imgfile"
       # Debug: Check if SVG contains text elements and show sample text
-      text_count=$(grep -c "<text" "$mermaid_img_dir/${imgfile}.svg" || echo "0")
+      text_count=$(grep -c "<text" "$mermaid_img_dir/${imgfile}.svg" | head -n1 | awk '{print $1}')
+      text_count=${text_count:-0}
       info "Debug: SVG contains $text_count text elements"
       if [ "$text_count" -gt 0 ]; then
         sample_text=$(grep -o "<text[^>]*>[^<]*</text>" "$mermaid_img_dir/${imgfile}.svg" | head -3 | sed 's/<[^>]*>//g' | tr '\n' ' ')
@@ -427,11 +428,13 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
         sanitized_svg="/tmp/${imgfile}_sanitized.svg"
         cp "$source_svg" "$sanitized_svg" 2>/dev/null || true
         if [ -f "$sanitized_svg" ]; then
-          pre_filter_count=$(grep -c "<filter" "$sanitized_svg" 2>/dev/null || echo "0")
+          pre_filter_count=$(grep -c "<filter" "$sanitized_svg" | head -n1 | awk '{print $1}')
+          pre_filter_count=${pre_filter_count:-0}
           sed -i '/<filter[[:space:]]/,/<\/filter>/d' "$sanitized_svg" 2>/dev/null || true
           sed -i -E 's/[[:space:]]filter="url\(#[-A-Za-z0-9_]+\)"//g' "$sanitized_svg" 2>/dev/null || true
           sed -i '/<feDropShadow[[:space:]]/d' "$sanitized_svg" 2>/dev/null || true
-          post_filter_count=$(grep -c "<filter" "$sanitized_svg" 2>/dev/null || echo "0")
+          post_filter_count=$(grep -c "<filter" "$sanitized_svg" | head -n1 | awk '{print $1}')
+          post_filter_count=${post_filter_count:-0}
           removed=$(( pre_filter_count - post_filter_count ))
           if [ "$removed" -gt 0 ]; then
             info "Sanitized SVG: removed $removed filter definitions for $imgfile"
