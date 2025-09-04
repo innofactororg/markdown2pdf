@@ -167,5 +167,5 @@ runs:
         name: ${{ inputs.OutFile }}
         retention-days: ${{ inputs.RetentionDays }}
         path: |
-          ${{ github.workspace }}/${{ inputs.OutFile }}*
-          ${{ github.workspace }}/${{ inputs.Folder }}/mermaid-imgs/
+          ${{ inputs.Folder }}/${{ inputs.OutFile }}*
+          ${{ inputs.Folder }}/mermaid-imgs/

@@ -301,45 +301,21 @@ cat > "$puppeteer_config_file" << 'EOF'
 {
   "args": [
     "--no-sandbox", 
-    "--disable-setuid-sandbox", 
-    "--disable-dev-shm-usage", 
-    "--disable-web-security",
-    "--font-render-hinting=none",
-    "--disable-font-subpixel-positioning",
-    "--force-device-scale-factor=1"
+    "--disable-setuid-sandbox"
   ],
   "executablePath": "/usr/bin/chromium"
 }
 EOF
 
-# Create Mermaid config file to ensure proper font rendering
+# Create Mermaid config file with basic settings for text visibility
 mermaid_config_file="/tmp/mermaid.config.json"
 cat > "$mermaid_config_file" << 'EOF'
 {
-  "theme": "neutral",
+  "theme": "default",
   "themeVariables": {
-    "fontFamily": "monospace",
+    "fontFamily": "Arial, sans-serif",
     "fontSize": "14px"
   }
-}
-EOF
-
-# Create CSS file to force text visibility
-mermaid_css_file="/tmp/mermaid.css"
-cat > "$mermaid_css_file" << 'EOF'
-text {
-  fill: #000000 !important;
-  font-family: monospace !important;
-  font-size: 14px !important;
-  font-weight: normal !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-}
-.node text {
-  fill: #000000 !important;
-}
-.edgeLabel text {
-  fill: #000000 !important;
 }
 EOF
 
@@ -406,15 +382,22 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
       continue
     fi
 
-    # Try to run mmdc with explicit error output and puppeteer config
-    # Add scale and font options for better text rendering
+    # Try to run mmdc with minimal configuration first
     mmdc_output=$(mmdc -i "/tmp/mermaid_${imgfile}.mmd" -o "$mermaid_img_dir/${imgfile}.svg" \
       --puppeteerConfigFile "$puppeteer_config_file" \
       --configFile "$mermaid_config_file" \
-      --scale 2 \
-      --backgroundColor white \
-      --cssFile "$mermaid_css_file" 2>&1)
+      --scale 1 \
+      --backgroundColor transparent 2>&1)
     mmdc_exit_code=$?
+
+    # If that fails, try without any config files
+    if [ $mmdc_exit_code -ne 0 ] || [ ! -f "$mermaid_img_dir/${imgfile}.svg" ]; then
+      info "Retrying mmdc without config files..."
+      mmdc_output=$(mmdc -i "/tmp/mermaid_${imgfile}.mmd" -o "$mermaid_img_dir/${imgfile}.svg" \
+        --scale 1 \
+        --backgroundColor white 2>&1)
+      mmdc_exit_code=$?
+    fi
 
     if [ $mmdc_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.svg" ]; then
       info "Successfully rendered mermaid diagram: $imgfile"
@@ -527,7 +510,7 @@ if test -n "${mdContent}"; then
   fi
   
   # Clean up temp files
-  rm -f /tmp/mermaid_imglist.txt /tmp/mermaid_*.mmd "$puppeteer_config_file" "$mermaid_config_file" "$mermaid_css_file"
+  rm -f /tmp/mermaid_imglist.txt /tmp/mermaid_*.mmd "$puppeteer_config_file" "$mermaid_config_file"
   if ! test -f "${OutFile}"; then
     warning "Unable to create ${OutFile}"
   else
