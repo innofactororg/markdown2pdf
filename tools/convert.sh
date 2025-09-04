@@ -304,7 +304,9 @@ cat > "$puppeteer_config_file" << 'EOF'
     "--disable-setuid-sandbox", 
     "--disable-dev-shm-usage", 
     "--disable-web-security",
-    "--font-render-hinting=none"
+    "--font-render-hinting=none",
+    "--disable-font-subpixel-positioning",
+    "--force-device-scale-factor=1"
   ],
   "executablePath": "/usr/bin/chromium"
 }
@@ -314,21 +316,30 @@ EOF
 mermaid_config_file="/tmp/mermaid.config.json"
 cat > "$mermaid_config_file" << 'EOF'
 {
-  "theme": "default",
+  "theme": "neutral",
   "themeVariables": {
-    "fontFamily": "DejaVu Sans, Arial, sans-serif",
-    "fontSize": "16px",
-    "primaryColor": "#ffffff",
-    "primaryTextColor": "#000000",
-    "primaryBorderColor": "#000000",
-    "lineColor": "#000000",
-    "secondaryColor": "#f0f0f0",
-    "tertiaryColor": "#e0e0e0",
-    "background": "#ffffff",
-    "mainBkg": "#ffffff",
-    "secondBkg": "#f9f9f9",
-    "tertiaryBkg": "#f0f0f0"
+    "fontFamily": "monospace",
+    "fontSize": "14px"
   }
+}
+EOF
+
+# Create CSS file to force text visibility
+mermaid_css_file="/tmp/mermaid.css"
+cat > "$mermaid_css_file" << 'EOF'
+text {
+  fill: #000000 !important;
+  font-family: monospace !important;
+  font-size: 14px !important;
+  font-weight: normal !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+.node text {
+  fill: #000000 !important;
+}
+.edgeLabel text {
+  fill: #000000 !important;
 }
 EOF
 
@@ -402,16 +413,22 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
       --configFile "$mermaid_config_file" \
       --scale 2 \
       --backgroundColor white \
-      --cssFile /dev/null 2>&1)
+      --cssFile "$mermaid_css_file" 2>&1)
     mmdc_exit_code=$?
 
     if [ $mmdc_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.svg" ]; then
       info "Successfully rendered mermaid diagram: $imgfile"
-      # Debug: Check if SVG contains text elements
+      # Debug: Check if SVG contains text elements and show sample text
       text_count=$(grep -c "<text" "$mermaid_img_dir/${imgfile}.svg" || echo "0")
       info "Debug: SVG contains $text_count text elements"
-      if [ "$text_count" -eq 0 ]; then
+      if [ "$text_count" -gt 0 ]; then
+        sample_text=$(grep -o "<text[^>]*>[^<]*</text>" "$mermaid_img_dir/${imgfile}.svg" | head -3 | sed 's/<[^>]*>//g' | tr '\n' ' ')
+        info "Debug: Sample text content: $sample_text"
+      else
         warning "Warning: SVG file contains no text elements, text may not be visible"
+        # Show a bit of the SVG structure for debugging
+        info "Debug: SVG structure preview:"
+        head -20 "$mermaid_img_dir/${imgfile}.svg" | grep -E "<(g|rect|path|circle|text)"
       fi
     else
       warning "Failed to render mermaid diagram: $imgfile (exit code: $mmdc_exit_code)"
@@ -496,8 +513,21 @@ if test -n "${mdContent}"; then
       --output="${OutFile}"
     cd "${currentPath}"
   fi
+  
+  # Show summary of generated Mermaid images
+  if [ -d "${DocsPath}/mermaid-imgs" ]; then
+    mermaid_count=$(find "${DocsPath}/mermaid-imgs" -name "*.svg" 2>/dev/null | wc -l)
+    if [ "$mermaid_count" -gt 0 ]; then
+      info "Generated $mermaid_count Mermaid diagram(s) in ${DocsPath}/mermaid-imgs/"
+      find "${DocsPath}/mermaid-imgs" -name "*.svg" 2>/dev/null | while read svg_file; do
+        size=$(($(stat -c '%s' "$svg_file" 2>/dev/null || echo "0") / 1000))
+        info "  - $(basename "$svg_file") (${size} KB)"
+      done
+    fi
+  fi
+  
   # Clean up temp files
-  rm -f /tmp/mermaid_imglist.txt /tmp/mermaid_*.mmd "$puppeteer_config_file"
+  rm -f /tmp/mermaid_imglist.txt /tmp/mermaid_*.mmd "$puppeteer_config_file" "$mermaid_config_file" "$mermaid_css_file"
   if ! test -f "${OutFile}"; then
     warning "Unable to create ${OutFile}"
   else

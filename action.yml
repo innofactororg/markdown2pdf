@@ -166,4 +166,6 @@ runs:
         if-no-files-found: error
         name: ${{ inputs.OutFile }}
         retention-days: ${{ inputs.RetentionDays }}
-        path: ${{ github.workspace }}/${{ inputs.OutFile }}*
+        path: |
+          ${{ github.workspace }}/${{ inputs.OutFile }}*
+          ${{ github.workspace }}/${{ inputs.Folder }}/mermaid-imgs/
