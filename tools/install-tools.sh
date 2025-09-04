@@ -17,6 +17,9 @@ if type apt-get > /dev/null 2>&1; then
   if ! type rsvg-convert > /dev/null 2>&1; then
     aptinstall librsvg2-bin
   fi
+  if ! type inkscape > /dev/null 2>&1; then
+    aptinstall inkscape
+  fi
   if ! test -f '/usr/share/fonts/truetype/crosextra/Carlito-Regular.ttf'; then
     aptinstall fonts-crosextra-carlito
   fi

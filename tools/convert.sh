@@ -300,7 +300,7 @@ puppeteer_config_file="/tmp/puppeteer.config.json"
 cat > "$puppeteer_config_file" << 'EOF'
 {
   "args": [
-    "--no-sandbox", 
+    "--no-sandbox",
     "--disable-setuid-sandbox"
   ],
   "executablePath": "/usr/bin/chromium"
@@ -413,113 +413,98 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
         info "Debug: SVG structure preview:"
         head -20 "$mermaid_img_dir/${imgfile}.svg" | grep -E "<(g|rect|path|circle|text)"
       fi
-      
+
       # Convert SVG to PNG to ensure text is preserved in PDF
       info "Converting SVG to PNG for better PDF compatibility..."
-      
-      # Try Chromium-based conversion first (most reliable for text)
+
       png_success=false
-      
-      # Method 1: Use Chromium to render SVG directly to PNG
-      info "Attempting PNG conversion with Chromium..."
-      
-      # Create a minimal HTML wrapper for the SVG
-      html_file="/tmp/mermaid_${imgfile}.html"
-      
-      # First, get the SVG dimensions to set proper viewport
-      svg_width=$(grep -o 'viewBox="[^"]*"' "$mermaid_img_dir/${imgfile}.svg" | sed 's/viewBox="[0-9]* [0-9]* \([0-9]*\) \([0-9]*\)"/\1/' || echo "400")
-      svg_height=$(grep -o 'viewBox="[^"]*"' "$mermaid_img_dir/${imgfile}.svg" | sed 's/viewBox="[0-9]* [0-9]* \([0-9]* \)\([0-9]*\)"/\2/' || echo "300")
-      
-      # Calculate window size with padding
-      window_width=$((svg_width + 100))
-      window_height=$((svg_height + 100))
-      
-      # Ensure minimum window size
-      [ "$window_width" -lt 600 ] && window_width=600
-      [ "$window_height" -lt 400 ] && window_height=400
-      
-      # Cap maximum window size to reasonable limits
-      [ "$window_width" -gt 1600 ] && window_width=1600
-      [ "$window_height" -gt 1200 ] && window_height=1200
-      
-      cat > "$html_file" << 'EOF'
+
+      # Method 1: Try Inkscape first (best SVG to PNG conversion)
+      if command -v inkscape >/dev/null 2>&1; then
+        info "Attempting PNG conversion with Inkscape..."
+        png_output=$(inkscape --export-type=png --export-dpi=150 \
+          --export-filename="$mermaid_img_dir/${imgfile}.png" \
+          "$mermaid_img_dir/${imgfile}.svg" 2>&1)
+        png_exit_code=$?
+
+        if [ $png_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
+          png_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
+          if [ "$png_size" -gt 5000 ]; then
+            png_success=true
+            info "Successfully converted to PNG with Inkscape: ${imgfile}.png (${png_size} bytes)"
+          fi
+        else
+          info "Inkscape conversion failed: $png_output"
+        fi
+      else
+        info "Inkscape not available, trying other methods..."
+      fi
+
+      # Method 2: Fallback to Chromium with simpler approach
+      if [ "$png_success" = false ]; then
+        info "Attempting PNG conversion with Chromium..."
+
+        # Create simple HTML wrapper without complex parsing
+        html_file="/tmp/mermaid_${imgfile}.html"
+        cat > "$html_file" << 'EOF'
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <style>
-    * { box-sizing: border-box; }
-    html, body { 
-      margin: 0; 
-      padding: 0; 
-      width: 100vw;
-      height: 100vh;
-      overflow: hidden;
-      font-family: Arial, sans-serif; 
+    body {
+      margin: 50px;
+      font-family: Arial, sans-serif;
       background: white;
     }
-    .container {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 50px;
-    }
-    svg { 
-      max-width: 100%; 
-      max-height: 100%; 
+    svg {
+      max-width: 100%;
       height: auto;
-      width: auto;
     }
   </style>
 </head>
 <body>
-<div class="container">
 EOF
-      
-      # Embed the SVG content
-      cat "$mermaid_img_dir/${imgfile}.svg" >> "$html_file"
-      
-      cat >> "$html_file" << 'EOF'
-</div>
+
+        # Embed the SVG content
+        cat "$mermaid_img_dir/${imgfile}.svg" >> "$html_file"
+
+        cat >> "$html_file" << 'EOF'
 </body>
 </html>
 EOF
-      
-      # Use Chromium to take a screenshot with dynamic sizing
-      info "Using window size: ${window_width}x${window_height}"
-      png_output=$(chromium --headless --disable-gpu --no-sandbox --disable-setuid-sandbox \
-        --window-size=${window_width},${window_height} --hide-scrollbars --disable-web-security \
-        --virtual-time-budget=5000 \
-        --force-device-scale-factor=1 \
-        --screenshot="$mermaid_img_dir/${imgfile}.png" \
-        "file://$html_file" 2>&1)
-      png_exit_code=$?
-      
-      if [ $png_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
-        png_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
-        if [ "$png_size" -gt 5000 ]; then  # Reasonable size check
-          png_success=true
-          info "Successfully converted to PNG with Chromium: ${imgfile}.png (${png_size} bytes)"
+
+        # Use Chromium with fixed window size (no arithmetic operations)
+        png_output=$(chromium --headless --disable-gpu --no-sandbox --disable-setuid-sandbox \
+          --window-size=1400,1000 --hide-scrollbars --disable-web-security \
+          --virtual-time-budget=5000 \
+          --force-device-scale-factor=1 \
+          --screenshot="$mermaid_img_dir/${imgfile}.png" \
+          "file://$html_file" 2>&1)
+        png_exit_code=$?
+
+        if [ $png_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
+          png_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
+          if [ "$png_size" -gt 5000 ]; then
+            png_success=true
+            info "Successfully converted to PNG with Chromium: ${imgfile}.png (${png_size} bytes)"
+          fi
         else
-          info "Chromium PNG too small (${png_size} bytes), trying rsvg-convert..."
+          info "Chromium conversion failed: $png_output"
         fi
-      else
-        info "Chromium conversion failed: $png_output"
+
+        # Clean up HTML file
+        rm -f "$html_file"
       fi
-      
-      # Clean up HTML file
-      rm -f "$html_file"
-      
-      # Method 2: Fallback to rsvg-convert only if Chromium failed
+
+      # Method 3: Final fallback to rsvg-convert
       if [ "$png_success" = false ]; then
-        info "Trying rsvg-convert as fallback..."
+        info "Trying rsvg-convert as final fallback..."
         png_output=$(rsvg-convert --format=png --width=1200 --height=800 --keep-aspect-ratio \
           --dpi-x=150 --dpi-y=150 \
           "$mermaid_img_dir/${imgfile}.svg" -o "$mermaid_img_dir/${imgfile}.png" 2>&1)
         png_exit_code=$?
-        
+
         if [ $png_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
           png_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
           if [ "$png_size" -gt 1000 ]; then
@@ -528,12 +513,12 @@ EOF
           fi
         fi
       fi
-      
+
       if [ "$png_success" = true ]; then
         # Update the markdown to use PNG instead of SVG for better PDF text rendering
         sed -i "s|${imgfile}\.svg|${imgfile}.png|g" "${mdOutFile}.with_mermaid"
       else
-        warning "PNG conversion failed with both methods, keeping SVG: $png_output"
+        warning "PNG conversion failed with all methods, keeping SVG: $png_output"
         info "Note: SVG text may not render properly in final PDF"
       fi
     else
@@ -619,7 +604,7 @@ if test -n "${mdContent}"; then
       --output="${OutFile}"
     cd "${currentPath}"
   fi
-  
+
   # Show summary of generated Mermaid images
   if [ -d "${DocsPath}/mermaid-imgs" ]; then
     svg_count=$(find "${DocsPath}/mermaid-imgs" -name "*.svg" 2>/dev/null | wc -l)
@@ -634,7 +619,7 @@ if test -n "${mdContent}"; then
       done
     fi
   fi
-  
+
   # Clean up temp files
   rm -f /tmp/mermaid_imglist.txt /tmp/mermaid_*.mmd "$puppeteer_config_file" "$mermaid_config_file"
   if ! test -f "${OutFile}"; then
