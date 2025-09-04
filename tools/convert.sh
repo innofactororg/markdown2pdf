@@ -317,9 +317,10 @@ awk_script='BEGIN{inblock=0;imgidx=0;}
   if (inblock && $0 ~ /^```[[:space:]]*$/) {
     inblock=0;
     print "![](mermaid-imgs/" imgfile ".svg)";
-    # Write the code without the trailing newline
+    # Write the code content to file
     printf "%s", code > "/tmp/mermaid_" imgfile ".mmd";
     close("/tmp/mermaid_" imgfile ".mmd");
+    code="";  # Reset code variable
     next;
   }
   if (inblock) {
@@ -361,20 +362,20 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
       warning "Mermaid file /tmp/mermaid_${imgfile}.mmd not found, skipping"
       continue
     fi
-    
+
     # Show the content for debugging
     cat "/tmp/mermaid_${imgfile}.mmd"
-    
+
     # Validate that the file has content
     if [ ! -s "/tmp/mermaid_${imgfile}.mmd" ]; then
       warning "Mermaid file /tmp/mermaid_${imgfile}.mmd is empty, skipping"
       continue
     fi
-    
+
     # Try to run mmdc with explicit error output and puppeteer config
     mmdc_output=$(mmdc -i "/tmp/mermaid_${imgfile}.mmd" -o "$mermaid_img_dir/${imgfile}.svg" --puppeteerConfigFile "$puppeteer_config_file" 2>&1)
     mmdc_exit_code=$?
-    
+
     if [ $mmdc_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.svg" ]; then
       info "Successfully rendered mermaid diagram: $imgfile"
     else
@@ -443,21 +444,12 @@ if test -n "${mdContent}"; then
     printf '%s\n' "${metadataContent}" | jq '.' > "${DocsPath}/metadata.json"
     # We need to be in the docs path so image paths can be relative
     cd "${DocsPath}"
-    
-    # Check if pandoc-latex-environment filter is available and working
+
+    # Note: Temporarily disabling pandoc-latex-environment filter due to compatibility issues
+    # Can be re-enabled when the LaTeX template compatibility is resolved
     filter_args=""
-    if command -v pandoc-latex-environment >/dev/null 2>&1; then
-      # Test if the filter works with a simple test
-      if echo ':::note\ntest\n:::' | pandoc --filter pandoc-latex-environment -t latex >/dev/null 2>&1; then
-        filter_args="--filter pandoc-latex-environment"
-        info "Using pandoc-latex-environment filter"
-      else
-        warning "pandoc-latex-environment filter failed test, skipping"
-      fi
-    else
-      warning "pandoc-latex-environment filter not found, skipping"
-    fi
-    
+    warning "pandoc-latex-environment filter disabled due to LaTeX compatibility issues"
+
     echo "${mdContent}" | pandoc \
       --standalone \
       --listings \
