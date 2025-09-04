@@ -317,11 +317,17 @@ awk_script='BEGIN{inblock=0;imgidx=0;}
   if (inblock && $0 ~ /^```[[:space:]]*$/) {
     inblock=0;
     print "![](mermaid-imgs/" imgfile ".svg)";
-    print code > "/tmp/mermaid_" imgfile ".mmd";
+    # Write the code without the trailing newline
+    printf "%s", code > "/tmp/mermaid_" imgfile ".mmd";
+    close("/tmp/mermaid_" imgfile ".mmd");
     next;
   }
   if (inblock) {
-    code = code $0 "\n";
+    if (code == "") {
+      code = $0;
+    } else {
+      code = code "\n" $0;
+    }
     next;
   }
   print;
@@ -351,12 +357,24 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
 
   while read -r imgfile; do
     info "Debug: Rendering $imgfile with content:"
+    if [ ! -f "/tmp/mermaid_${imgfile}.mmd" ]; then
+      warning "Mermaid file /tmp/mermaid_${imgfile}.mmd not found, skipping"
+      continue
+    fi
+    
+    # Show the content for debugging
     cat "/tmp/mermaid_${imgfile}.mmd"
-
+    
+    # Validate that the file has content
+    if [ ! -s "/tmp/mermaid_${imgfile}.mmd" ]; then
+      warning "Mermaid file /tmp/mermaid_${imgfile}.mmd is empty, skipping"
+      continue
+    fi
+    
     # Try to run mmdc with explicit error output and puppeteer config
     mmdc_output=$(mmdc -i "/tmp/mermaid_${imgfile}.mmd" -o "$mermaid_img_dir/${imgfile}.svg" --puppeteerConfigFile "$puppeteer_config_file" 2>&1)
     mmdc_exit_code=$?
-
+    
     if [ $mmdc_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.svg" ]; then
       info "Successfully rendered mermaid diagram: $imgfile"
     else
@@ -425,6 +443,21 @@ if test -n "${mdContent}"; then
     printf '%s\n' "${metadataContent}" | jq '.' > "${DocsPath}/metadata.json"
     # We need to be in the docs path so image paths can be relative
     cd "${DocsPath}"
+    
+    # Check if pandoc-latex-environment filter is available and working
+    filter_args=""
+    if command -v pandoc-latex-environment >/dev/null 2>&1; then
+      # Test if the filter works with a simple test
+      if echo ':::note\ntest\n:::' | pandoc --filter pandoc-latex-environment -t latex >/dev/null 2>&1; then
+        filter_args="--filter pandoc-latex-environment"
+        info "Using pandoc-latex-environment filter"
+      else
+        warning "pandoc-latex-environment filter failed test, skipping"
+      fi
+    else
+      warning "pandoc-latex-environment filter not found, skipping"
+    fi
+    
     echo "${mdContent}" | pandoc \
       --standalone \
       --listings \
@@ -432,7 +465,7 @@ if test -n "${mdContent}"; then
       --metadata-file="${DocsPath}/metadata.json" \
       -f markdown+backtick_code_blocks+pipe_tables+auto_identifiers+yaml_metadata_block+table_captions+footnotes+smart+escaped_line_breaks \
       --template="${templateFilePath}" \
-      --filter pandoc-latex-environment \
+      ${filter_args} \
       --output="${OutFile}"
     cd "${currentPath}"
   fi
