@@ -413,6 +413,20 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
         info "Debug: SVG structure preview:"
         head -20 "$mermaid_img_dir/${imgfile}.svg" | grep -E "<(g|rect|path|circle|text)"
       fi
+      
+      # Convert SVG to PNG to ensure text is preserved in PDF
+      info "Converting SVG to PNG for better PDF compatibility..."
+      png_output=$(rsvg-convert --format=png --width=1200 --height=800 --keep-aspect-ratio \
+        "$mermaid_img_dir/${imgfile}.svg" -o "$mermaid_img_dir/${imgfile}.png" 2>&1)
+      png_exit_code=$?
+      
+      if [ $png_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
+        info "Successfully converted to PNG: ${imgfile}.png"
+        # Update the markdown to use PNG instead of SVG for better PDF text rendering
+        sed -i "s|${imgfile}\.svg|${imgfile}.png|g" "${mdOutFile}.with_mermaid"
+      else
+        warning "PNG conversion failed, keeping SVG: $png_output"
+      fi
     else
       warning "Failed to render mermaid diagram: $imgfile (exit code: $mmdc_exit_code)"
       info "mmdc output: $mmdc_output"
@@ -499,12 +513,15 @@ if test -n "${mdContent}"; then
   
   # Show summary of generated Mermaid images
   if [ -d "${DocsPath}/mermaid-imgs" ]; then
-    mermaid_count=$(find "${DocsPath}/mermaid-imgs" -name "*.svg" 2>/dev/null | wc -l)
-    if [ "$mermaid_count" -gt 0 ]; then
-      info "Generated $mermaid_count Mermaid diagram(s) in ${DocsPath}/mermaid-imgs/"
-      find "${DocsPath}/mermaid-imgs" -name "*.svg" 2>/dev/null | while read svg_file; do
-        size=$(($(stat -c '%s' "$svg_file" 2>/dev/null || echo "0") / 1000))
-        info "  - $(basename "$svg_file") (${size} KB)"
+    svg_count=$(find "${DocsPath}/mermaid-imgs" -name "*.svg" 2>/dev/null | wc -l)
+    png_count=$(find "${DocsPath}/mermaid-imgs" -name "*.png" 2>/dev/null | wc -l)
+    if [ "$svg_count" -gt 0 ] || [ "$png_count" -gt 0 ]; then
+      info "Generated Mermaid diagrams in ${DocsPath}/mermaid-imgs/:"
+      info "  - $svg_count SVG files (original)"
+      info "  - $png_count PNG files (for PDF compatibility)"
+      find "${DocsPath}/mermaid-imgs" -name "*.svg" -o -name "*.png" 2>/dev/null | while read img_file; do
+        size=$(($(stat -c '%s' "$img_file" 2>/dev/null || echo "0") / 1000))
+        info "  - $(basename "$img_file") (${size} KB)"
       done
     fi
   fi
