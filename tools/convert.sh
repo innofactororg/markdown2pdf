@@ -512,7 +512,6 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
 <body>
 <div class="container">
 EOF
-EOF
 
       # Embed the SVG content
       cat "$mermaid_img_dir/${imgfile}.svg" >> "$html_file"
