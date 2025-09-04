@@ -98,6 +98,9 @@ elif type apk > /dev/null 2>&1; then
   if ! type rsvg-convert > /dev/null 2>&1; then
     apk add --no-cache librsvg
   fi
+  if ! type inkscape > /dev/null 2>&1; then
+    apk add --no-cache inkscape
+  fi
   if ! test -f '/usr/share/fonts/carlito/Carlito-Regular.ttf'; then
     apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community font-carlito
   fi

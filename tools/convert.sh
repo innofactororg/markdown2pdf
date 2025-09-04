@@ -474,9 +474,26 @@ EOF
 </html>
 EOF
 
-        # Use Chromium with fixed window size (no arithmetic operations)
+        # Use Chromium with adaptive window size (no arithmetic operations)
+        # Extract SVG dimensions more reliably for window sizing
+        svg_viewbox=$(grep -o 'viewBox="[^"]*"' "$mermaid_img_dir/${imgfile}.svg" || echo 'viewBox="0 0 800 600"')
+        # Extract width and height from viewBox (format: "minX minY width height")
+        svg_dims=$(echo "$svg_viewbox" | sed 's/viewBox="\([^"]*\)"/\1/' | awk '{print $3 " " $4}')
+        svg_width=$(echo "$svg_dims" | awk '{print int($1)}' || echo "800")
+        svg_height=$(echo "$svg_dims" | awk '{print int($2)}' || echo "600")
+        
+        # Calculate window size with padding, ensuring reasonable bounds
+        window_width=$((svg_width + 200))
+        window_height=$((svg_height + 200))
+        
+        # Ensure minimum and maximum window size
+        [ "$window_width" -lt 800 ] && window_width=800
+        [ "$window_height" -lt 600 ] && window_height=600
+        [ "$window_width" -gt 2000 ] && window_width=2000
+        [ "$window_height" -gt 1500 ] && window_height=1500
+        
         png_output=$(chromium --headless --disable-gpu --no-sandbox --disable-setuid-sandbox \
-          --window-size=1400,1000 --hide-scrollbars --disable-web-security \
+          --window-size=${window_width},${window_height} --hide-scrollbars --disable-web-security \
           --virtual-time-budget=5000 \
           --force-device-scale-factor=1 \
           --screenshot="$mermaid_img_dir/${imgfile}.png" \
