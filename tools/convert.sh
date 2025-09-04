@@ -322,8 +322,18 @@ awk "$awk_script" "${mdOutFile}" > "${mdOutFile}.with_mermaid"
 
 # Render all Mermaid diagrams
 if [ -f /tmp/mermaid_imglist.txt ]; then
+  # Ensure Puppeteer environment is set for mmdc
+  export PUPPETEER_EXECUTABLE_PATH="${PUPPETEER_EXECUTABLE_PATH:-/usr/bin/chromium}"
+  export PUPPETEER_ARGS="${PUPPETEER_ARGS:---no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu}"
+  
   while read -r imgfile; do
-    mmdc -i "/tmp/mermaid_${imgfile}.mmd" -o "$mermaid_img_dir/${imgfile}.svg" || echo "Warning: Failed to render $imgfile"
+    if mmdc -i "/tmp/mermaid_${imgfile}.mmd" -o "$mermaid_img_dir/${imgfile}.svg" 2>/dev/null; then
+      info "Successfully rendered mermaid diagram: $imgfile"
+    else
+      warning "Failed to render mermaid diagram: $imgfile, skipping..."
+      # Create a placeholder text file so the image link doesn't break completely
+      echo "Mermaid diagram could not be rendered" > "$mermaid_img_dir/${imgfile}.txt"
+    fi
   done < /tmp/mermaid_imglist.txt
 fi
 

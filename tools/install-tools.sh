@@ -65,6 +65,13 @@ if type apt-get > /dev/null 2>&1; then
     aptinstall npm
   fi
   sudo npm install -g @mermaid-js/mermaid-cli
+  # Configure Puppeteer for Ubuntu/Debian Chromium
+  if [ -x /usr/bin/chromium-browser ]; then
+    export PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+  elif [ -x /usr/bin/chromium ]; then
+    export PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+  fi
+  export PUPPETEER_ARGS="--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu"
 elif type apk > /dev/null 2>&1; then
   # Install Chromium and dependencies for Mermaid CLI (mmdc)
   apk add --no-cache chromium
@@ -73,6 +80,9 @@ elif type apk > /dev/null 2>&1; then
     apk add --no-cache nodejs npm
   fi
   npm install -g @mermaid-js/mermaid-cli
+  # Configure Puppeteer for Alpine Chromium
+  export PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+  export PUPPETEER_ARGS="--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu"
   if ! type git > /dev/null 2>&1; then
     apk add --no-cache git
   fi
@@ -106,4 +116,8 @@ if [ -x /usr/bin/chromium-browser ]; then
 elif [ -x /usr/bin/chromium ]; then
   export PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 fi
-echo \"export PUPPETEER_EXECUTABLE_PATH=\\\"$PUPPETEER_EXECUTABLE_PATH\\\"\" >> \"$GITHUB_ENV\"
+# Only write to $GITHUB_ENV if it exists and its directory is present
+if [ -n "$GITHUB_ENV" ] && [ -d "$(dirname "$GITHUB_ENV")" ]; then
+  echo "export PUPPETEER_EXECUTABLE_PATH=\"$PUPPETEER_EXECUTABLE_PATH\"" >> "$GITHUB_ENV"
+  echo "export PUPPETEER_ARGS=\"$PUPPETEER_ARGS\"" >> "$GITHUB_ENV"
+fi
