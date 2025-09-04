@@ -419,86 +419,71 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
 
       png_success=false
 
-      # Method 1: Try Inkscape first (primary method - fix black box issue)
-      if command -v inkscape >/dev/null 2>&1; then
-        info "Attempting PNG conversion with Inkscape..."
-
-        # Sanitize SVG to remove filters that trigger black boxes in headless Inkscape (e.g., feDropShadow)
+        # Sanitize SVG aggressively to remove elements known to cause issues in headless Inkscape
         source_svg="$mermaid_img_dir/${imgfile}.svg"
         sanitized_svg="/tmp/${imgfile}_sanitized.svg"
+        plain_svg="/tmp/${imgfile}_plain.svg"
+
+        # Start with a fresh copy
         cp "$source_svg" "$sanitized_svg" 2>/dev/null || true
+
         if [ -f "$sanitized_svg" ]; then
-          pre_filter_count=$(grep -c "<filter" "$sanitized_svg" | head -n1 | awk '{print $1}')
-          pre_filter_count=${pre_filter_count:-0}
-          sed -i '/<filter[[:space:]]/,/<\/filter>/d' "$sanitized_svg" 2>/dev/null || true
-          sed -i -E 's/[[:space:]]filter="url\(#[-A-Za-z0-9_]+\)"//g' "$sanitized_svg" 2>/dev/null || true
-          sed -i '/<feDropShadow[[:space:]]/d' "$sanitized_svg" 2>/dev/null || true
-          post_filter_count=$(grep -c "<filter" "$sanitized_svg" | head -n1 | awk '{print $1}')
-          post_filter_count=${post_filter_count:-0}
-          removed=$(( pre_filter_count - post_filter_count ))
-          if [ "$removed" -gt 0 ]; then
-            info "Sanitized SVG: removed $removed filter definitions for $imgfile"
-          fi
+          info "Sanitizing SVG for Inkscape compatibility..."
+          # Remove filter definitions and references (cause of feDropShadow black boxes)
+          sed -i -e '/<filter[[:space:]]/,/<\/filter>/d' \
+                 -e 's/[[:space:]]filter="url(#[-A-Za-z0-9_]*)"//g' \
+                 -e '/<feDropShadow/d' "$sanitized_svg" 2>/dev/null || true
+          
+          # Remove clipping paths and masks, another common cause of render failures
+          sed -i -e '/<clipPath[[:space:]]/,/<\/clipPath>/d' \
+                 -e 's/[[:space:]]clip-path="url(#[-A-Za-z0-9_]*)"//g' "$sanitized_svg" 2>/dev/null || true
+          
+          # Remove style blocks, as they can interfere with rendering
+          sed -i '/<style[[:space:]]/,/<\/style>/d' "$sanitized_svg" 2>/dev/null || true
         fi
+        
         svg_for_inkscape="$sanitized_svg"
         [ -s "$svg_for_inkscape" ] || svg_for_inkscape="$source_svg"
 
         # Debug: Show Inkscape version and first lines
         inkscape_version=$(inkscape --version 2>&1 | head -1)
         info "Debug: Using $inkscape_version"
-        head -n 4 "$svg_for_inkscape" 2>/dev/null | sed 's/^/      /'
 
-        # Approach 1
+        # Stage 1: Export to a "plain" SVG to further strip problematic elements
+        inkscape --export-plain-svg --export-filename="$plain_svg" "$svg_for_inkscape" >/dev/null 2>&1
+        
+        if [ ! -s "$plain_svg" ]; then
+          warning "Failed to create plain SVG, falling back to sanitized version."
+          cp "$svg_for_inkscape" "$plain_svg"
+        fi
+
+        # Stage 2: Convert the plain SVG to PNG
         png_output=$(inkscape \
           --export-type=png \
           --export-area-drawing \
+          --export-background=white \
+          --export-background-opacity=1 \
           --export-dpi=150 \
-          --export-text-to-path \
           --export-filename="$mermaid_img_dir/${imgfile}.png" \
-          "$svg_for_inkscape" 2>&1)
+          "$plain_svg" 2>&1)
         png_exit_code=$?
 
         if [ $png_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
           png_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
-          if [ "$png_size" -gt 1500 ]; then
+          if [ "$png_size" -gt 1000 ]; then # Increased threshold slightly
             png_success=true
-            info "Successfully converted to PNG with Inkscape (approach 1): ${imgfile}.png (${png_size} bytes)"
+            info "Successfully converted to PNG with Inkscape: ${imgfile}.png (${png_size} bytes)"
           else
-            info "Inkscape approach 1 small (${png_size} bytes) trying approach 2..."
+            info "Inkscape conversion produced a small file (${png_size} bytes), will try Chromium backup."
           fi
         else
-          info "Inkscape approach 1 failed: $png_output"
-        fi
-
-        if [ "$png_success" = false ]; then
-          # Approach 2
-            png_output=$(inkscape \
-              --export-type=png \
-              --export-area-page \
-              --export-background=white \
-              --export-background-opacity=1.0 \
-              --export-dpi=150 \
-              --export-text-to-path \
-              --export-filename="$mermaid_img_dir/${imgfile}.png" \
-              "$svg_for_inkscape" 2>&1)
-            png_exit_code=$?
-            if [ $png_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
-              png_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
-              if [ "$png_size" -gt 1500 ]; then
-                png_success=true
-                info "Successfully converted to PNG with Inkscape (approach 2): ${imgfile}.png (${png_size} bytes)"
-              else
-                info "Inkscape approach 2 also small (${png_size} bytes)"
-              fi
-            else
-              info "Inkscape approach 2 failed: $png_output"
-            fi
+          info "Inkscape conversion failed: $png_output"
         fi
       else
         info "Inkscape not available, trying other methods..."
       fi
 
-      # Method 2: Chromium backup (improved to handle truncation)
+      # Method 2: Chromium backup (if Inkscape fails)
       if [ "$png_success" = false ]; then
         if command -v chromium >/dev/null 2>&1; then
           info "Attempting PNG conversion with Chromium (backup method)..."
