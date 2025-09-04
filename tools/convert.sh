@@ -416,16 +416,72 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
       
       # Convert SVG to PNG to ensure text is preserved in PDF
       info "Converting SVG to PNG for better PDF compatibility..."
-      png_output=$(rsvg-convert --format=png --width=1200 --height=800 --keep-aspect-ratio \
-        "$mermaid_img_dir/${imgfile}.svg" -o "$mermaid_img_dir/${imgfile}.png" 2>&1)
-      png_exit_code=$?
       
-      if [ $png_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
-        info "Successfully converted to PNG: ${imgfile}.png"
+      # Try multiple conversion approaches for better text rendering
+      png_success=false
+      
+      # First try: rsvg-convert with explicit font path and text rendering options
+      if [ "$png_success" = false ]; then
+        png_output=$(rsvg-convert --format=png --width=1200 --height=800 --keep-aspect-ratio \
+          --dpi-x=150 --dpi-y=150 \
+          "$mermaid_img_dir/${imgfile}.svg" -o "$mermaid_img_dir/${imgfile}.png" 2>&1)
+        png_exit_code=$?
+        
+        if [ $png_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
+          # Check if PNG has reasonable file size (indicates content was rendered)
+          png_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
+          if [ "$png_size" -gt 1000 ]; then
+            png_success=true
+            info "Successfully converted to PNG with rsvg-convert: ${imgfile}.png (${png_size} bytes)"
+          fi
+        fi
+      fi
+      
+      # Second try: Use Chromium/Puppeteer to render PNG directly (more reliable for complex SVGs)
+      if [ "$png_success" = false ]; then
+        info "Retrying PNG conversion with Chromium..."
+        # Create a simple HTML wrapper for the SVG
+        html_file="/tmp/mermaid_${imgfile}.html"
+        cat > "$html_file" << EOF
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
+    svg { max-width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+$(cat "$mermaid_img_dir/${imgfile}.svg")
+</body>
+</html>
+EOF
+        
+        # Use Chromium to take a screenshot of the HTML (which includes the SVG)
+        png_output=$(chromium --headless --disable-gpu --no-sandbox --disable-setuid-sandbox \
+          --window-size=1200,800 --hide-scrollbars \
+          --screenshot="$mermaid_img_dir/${imgfile}.png" \
+          "file://$html_file" 2>&1)
+        png_exit_code=$?
+        
+        if [ $png_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
+          png_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
+          if [ "$png_size" -gt 1000 ]; then
+            png_success=true
+            info "Successfully converted to PNG with Chromium: ${imgfile}.png (${png_size} bytes)"
+          fi
+        fi
+        
+        # Clean up HTML file
+        rm -f "$html_file"
+      fi
+      
+      if [ "$png_success" = true ]; then
         # Update the markdown to use PNG instead of SVG for better PDF text rendering
         sed -i "s|${imgfile}\.svg|${imgfile}.png|g" "${mdOutFile}.with_mermaid"
       else
-        warning "PNG conversion failed, keeping SVG: $png_output"
+        warning "PNG conversion failed with both methods, keeping SVG: $png_output"
+        info "Note: SVG text may not render properly in final PDF"
       fi
     else
       warning "Failed to render mermaid diagram: $imgfile (exit code: $mmdc_exit_code)"
