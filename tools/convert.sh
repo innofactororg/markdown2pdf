@@ -423,6 +423,8 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
       if command -v inkscape >/dev/null 2>&1; then
         info "Attempting PNG conversion with Inkscape..."
         png_output=$(inkscape --export-type=png --export-dpi=150 \
+          --export-background=white --export-background-opacity=1 \
+          --export-area-page \
           --export-filename="$mermaid_img_dir/${imgfile}.png" \
           "$mermaid_img_dir/${imgfile}.svg" 2>&1)
         png_exit_code=$?
@@ -483,7 +485,7 @@ EOF
         svg_dims=$(echo "$svg_viewbox" | sed 's/viewBox="\([^"]*\)"/\1/' | awk '{print $3 " " $4}' 2>/dev/null || echo "800 600")
         svg_width=$(echo "$svg_dims" | awk '{print int($1+0.5)}' 2>/dev/null || echo "800")
         svg_height=$(echo "$svg_dims" | awk '{print int($2+0.5)}' 2>/dev/null || echo "600")
-        
+
         # Ensure we have valid numeric values before arithmetic
         case "$svg_width" in
           ''|*[!0-9]*) svg_width=800 ;;
@@ -491,17 +493,17 @@ EOF
         case "$svg_height" in
           ''|*[!0-9]*) svg_height=600 ;;
         esac
-        
+
         # Calculate window size with padding, ensuring reasonable bounds
         window_width=$((svg_width + 200))
         window_height=$((svg_height + 200))
-        
+
         # Ensure minimum and maximum window size
         [ "$window_width" -lt 800 ] && window_width=800
         [ "$window_height" -lt 600 ] && window_height=600
         [ "$window_width" -gt 2000 ] && window_width=2000
         [ "$window_height" -gt 1500 ] && window_height=1500
-        
+
         png_output=$(chromium --headless --disable-gpu --no-sandbox --disable-setuid-sandbox \
           --window-size=${window_width},${window_height} --hide-scrollbars --disable-web-security \
           --virtual-time-budget=5000 \
