@@ -429,9 +429,11 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
 
         if [ $png_exit_code -eq 0 ] && [ -f "$mermaid_img_dir/${imgfile}.png" ]; then
           png_size=$(stat -c '%s' "$mermaid_img_dir/${imgfile}.png" 2>/dev/null || echo "0")
-          if [ "$png_size" -gt 5000 ]; then
+          if [ "$png_size" -gt 1000 ]; then
             png_success=true
             info "Successfully converted to PNG with Inkscape: ${imgfile}.png (${png_size} bytes)"
+          else
+            info "Inkscape PNG too small (${png_size} bytes), trying other methods..."
           fi
         else
           info "Inkscape conversion failed: $png_output"
@@ -474,13 +476,21 @@ EOF
 </html>
 EOF
 
-        # Use Chromium with adaptive window size (no arithmetic operations)
+        # Use Chromium with adaptive window size (robust arithmetic)
         # Extract SVG dimensions more reliably for window sizing
-        svg_viewbox=$(grep -o 'viewBox="[^"]*"' "$mermaid_img_dir/${imgfile}.svg" || echo 'viewBox="0 0 800 600"')
+        svg_viewbox=$(grep -o 'viewBox="[^"]*"' "$mermaid_img_dir/${imgfile}.svg" 2>/dev/null || echo 'viewBox="0 0 800 600"')
         # Extract width and height from viewBox (format: "minX minY width height")
-        svg_dims=$(echo "$svg_viewbox" | sed 's/viewBox="\([^"]*\)"/\1/' | awk '{print $3 " " $4}')
-        svg_width=$(echo "$svg_dims" | awk '{print int($1)}' || echo "800")
-        svg_height=$(echo "$svg_dims" | awk '{print int($2)}' || echo "600")
+        svg_dims=$(echo "$svg_viewbox" | sed 's/viewBox="\([^"]*\)"/\1/' | awk '{print $3 " " $4}' 2>/dev/null || echo "800 600")
+        svg_width=$(echo "$svg_dims" | awk '{print int($1+0.5)}' 2>/dev/null || echo "800")
+        svg_height=$(echo "$svg_dims" | awk '{print int($2+0.5)}' 2>/dev/null || echo "600")
+        
+        # Ensure we have valid numeric values before arithmetic
+        case "$svg_width" in
+          ''|*[!0-9]*) svg_width=800 ;;
+        esac
+        case "$svg_height" in
+          ''|*[!0-9]*) svg_height=600 ;;
+        esac
         
         # Calculate window size with padding, ensuring reasonable bounds
         window_width=$((svg_width + 200))
