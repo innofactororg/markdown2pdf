@@ -440,15 +440,21 @@ if [ -f /tmp/mermaid_imglist.txt ]; then
       justify-content: center;
       align-items: center;
       box-sizing: border-box;
+      height: 100vh;
+      overflow: hidden;
     }
     .container {
-      padding: 20px;
-      display: inline-block;
+      padding: 40px;
+      max-width: 100%;
+      max-height: 100%;
+      overflow: visible;
     }
     svg {
       display: block;
-      width: 100%;
-      height: 100%;
+      max-width: 100%;
+      height: auto;
+      /* Preserve aspect ratio */
+      width: auto\9; /* For IE8 */
     }
   </style>
 </head>
@@ -466,17 +472,32 @@ EOF
 EOF
 
       # Extract SVG viewBox dimensions to set appropriate screenshot size
-      viewbox=$(grep -o 'viewBox="[^"]*"' "$mermaid_img_dir/${imgfile}.svg" | grep -o '[0-9].* [0-9].*' | head -1)
+      viewbox=$(grep -o 'viewBox="[^"]*"' "$mermaid_img_dir/${imgfile}.svg" | sed 's/viewBox="//g' | sed 's/"//g' | head -1)
       if [ -n "$viewbox" ]; then
-        # Extract width and height from viewBox
-        svg_width=$(echo "$viewbox" | awk '{print $3}')
-        svg_height=$(echo "$viewbox" | awk '{print $4}')
+        # Extract width and height from viewBox - using awk to handle floating point values safely
+        svg_width=$(echo "$viewbox" | awk '{print int($3)}')
+        svg_height=$(echo "$viewbox" | awk '{print int($4)}')
         
-        # Add padding to dimensions (100px on each side)
-        chrome_width=$((svg_width + 200))
-        chrome_height=$((svg_height + 200))
-        
-        info "Setting Chromium window size to ${chrome_width}x${chrome_height} based on SVG viewBox"
+        # Make sure we got numeric values (use shell test for numeric)
+        if echo "$svg_width" | grep -qE '^[0-9]+$' && echo "$svg_height" | grep -qE '^[0-9]+$'; then
+          # Verify dimensions are reasonable
+          if [ "$svg_width" -gt 0 ] && [ "$svg_height" -gt 0 ]; then
+            # Add padding to dimensions (100px on each side)
+            chrome_width=$((svg_width + 200))
+            chrome_height=$((svg_height + 200))
+            info "Setting Chromium window size to ${chrome_width}x${chrome_height} based on SVG viewBox"
+          else
+            # Default values if dimensions are too small
+            chrome_width=1400
+            chrome_height=1000
+            info "SVG dimensions too small (width=${svg_width}, height=${svg_height}), using default window size ${chrome_width}x${chrome_height}"
+          fi
+        else
+          # Default values if dimensions are not numeric
+          chrome_width=1400
+          chrome_height=1000
+          info "Non-numeric SVG dimensions (width=${svg_width}, height=${svg_height}), using default window size ${chrome_width}x${chrome_height}"
+        fi
       else
         # Default values if viewBox extraction fails
         chrome_width=1400
@@ -513,7 +534,9 @@ EOF
         info "Trying rsvg-convert as fallback..."
         
         # Use the same dimensions we calculated for Chromium if available
-        if [ -n "$viewbox" ] && [ -n "$svg_width" ] && [ -n "$svg_height" ]; then
+        if [ -n "$viewbox" ] && [ -n "$svg_width" ] && [ -n "$svg_height" ] && 
+           echo "$svg_width" | grep -qE '^[0-9]+$' && echo "$svg_height" | grep -qE '^[0-9]+$' && 
+           [ "$svg_width" -gt 0 ] && [ "$svg_height" -gt 0 ]; then
           # For rsvg-convert, use the actual SVG dimensions with a bit higher DPI for better quality
           info "Using SVG dimensions for rsvg-convert: ${svg_width}x${svg_height}"
           png_output=$(rsvg-convert --format=png --keep-aspect-ratio \
@@ -521,7 +544,7 @@ EOF
             --dpi-x=150 --dpi-y=150 \
             "$mermaid_img_dir/${imgfile}.svg" -o "$mermaid_img_dir/${imgfile}.png" 2>&1)
         else
-          # Default values if dimensions aren't available
+          # Default values if dimensions aren't available or invalid
           info "Using default dimensions for rsvg-convert"
           png_output=$(rsvg-convert --format=png --keep-aspect-ratio \
             --width=1200 --height=800 \
