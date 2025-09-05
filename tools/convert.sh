@@ -547,16 +547,25 @@ EOF
         if echo "$svg_width" | grep -qE '^[0-9]+$' && echo "$svg_height" | grep -qE '^[0-9]+$'; then
           # Verify dimensions are reasonable
           if [ "$svg_width" -gt 0 ] && [ "$svg_height" -gt 0 ]; then
-            # Scale up the diagram for better readability - use a much higher multiplier (4x) for more visibility
-            chrome_width=$((svg_width * 4))
-            chrome_height=$((svg_height * 4))
+            # Scale up the diagram for better readability but keep dimensions reasonable
+            # Use a moderate multiplier (2x) to avoid memory issues with very large diagrams
+            chrome_width=$((svg_width * 2))
+            chrome_height=$((svg_height * 2))
 
             # Ensure minimum size (prevents tiny diagrams)
-            if [ "$chrome_width" -lt 2400 ]; then
-              chrome_width=2400
+            if [ "$chrome_width" -lt 1600 ]; then
+              chrome_width=1600
             fi
-            if [ "$chrome_height" -lt 1600 ]; then
-              chrome_height=1600
+            if [ "$chrome_height" -lt 1200 ]; then
+              chrome_height=1200
+            fi
+            
+            # Set maximum size to prevent Chromium crashes
+            if [ "$chrome_width" -gt 3000 ]; then
+              chrome_width=3000
+            fi
+            if [ "$chrome_height" -gt 2000 ]; then
+              chrome_height=2000
             fi
 
             # Update the SVG directly to ensure it scales properly
@@ -593,12 +602,15 @@ EOF
       sed -i 's/fill="[^"]*"/fill="#333333"/g' "$mermaid_img_dir/${imgfile}.svg"
 
       # Use Chromium to take a screenshot with dimensions based on the SVG content
-      # Adding a timeout to prevent indefinite hanging
+      # Adding a timeout to prevent indefinite hanging and using a more conservative approach
       info "Running Chromium screenshot with timeout (30 seconds)"
       png_output=$(timeout 30 chromium --headless --disable-gpu --no-sandbox --disable-setuid-sandbox \
         --window-size=${chrome_width},${chrome_height} --hide-scrollbars \
         --screenshot="$mermaid_img_dir/${imgfile}.png" \
-        --force-device-scale-factor=2 \
+        --force-device-scale-factor=1.5 \
+        --disable-dev-shm-usage \
+        --disable-software-rasterizer \
+        --disable-accelerated-2d-canvas \
         "file://$html_file" 2>&1)
       png_exit_code=$?
 
@@ -627,34 +639,41 @@ EOF
       if [ "$png_success" = false ]; then
         info "Trying rsvg-convert as fallback..."
 
-        # Use the same dimensions we calculated for Chromium if available
+        # Use more moderate dimensions for rsvg-convert to avoid memory issues
         if [ -n "$viewbox" ] && [ -n "$svg_width" ] && [ -n "$svg_height" ] &&
            echo "$svg_width" | grep -qE '^[0-9]+$' && echo "$svg_height" | grep -qE '^[0-9]+$' &&
            [ "$svg_width" -gt 0 ] && [ "$svg_height" -gt 0 ]; then
-          # For rsvg-convert, use scaled dimensions (5x) with higher DPI for better quality
-          rsvg_width=$((svg_width * 5))
-          rsvg_height=$((svg_height * 5))
+          # For rsvg-convert, use scaled dimensions (2x) with higher DPI for better quality
+          rsvg_width=$((svg_width * 2))
+          rsvg_height=$((svg_height * 2))
           # Ensure minimum size
-          if [ "$rsvg_width" -lt 2400 ]; then
-            rsvg_width=2400
+          if [ "$rsvg_width" -lt 1200 ]; then
+            rsvg_width=1200
           fi
-          if [ "$rsvg_height" -lt 1800 ]; then
-            rsvg_height=1800
+          if [ "$rsvg_height" -lt 900 ]; then
+            rsvg_height=900
+          fi
+          # Also ensure maximum size
+          if [ "$rsvg_width" -gt 2000 ]; then
+            rsvg_width=2000
+          fi
+          if [ "$rsvg_height" -gt 1500 ]; then
+            rsvg_height=1500
           fi
 
           info "Using scaled SVG dimensions for rsvg-convert: ${rsvg_width}x${rsvg_height}"
-          # Use higher DPI (1200) for much better text clarity
+          # Use moderate DPI (600) to balance quality and performance
           png_output=$(rsvg-convert --format=png --keep-aspect-ratio \
             --width="$rsvg_width" --height="$rsvg_height" \
-            --dpi-x=1200 --dpi-y=1200 \
+            --dpi-x=600 --dpi-y=600 \
             --background-color=white \
             "$mermaid_img_dir/${imgfile}.svg" -o "$mermaid_img_dir/${imgfile}.png" 2>&1)
         else
           # Default values if dimensions aren't available or invalid
           info "Using default dimensions for rsvg-convert"
           png_output=$(rsvg-convert --format=png --keep-aspect-ratio \
-            --width=2400 --height=1800 \
-            --dpi-x=1200 --dpi-y=1200 \
+            --width=1600 --height=1200 \
+            --dpi-x=600 --dpi-y=600 \
             --background-color=white \
             "$mermaid_img_dir/${imgfile}.svg" -o "$mermaid_img_dir/${imgfile}.png" 2>&1)
         fi
@@ -665,8 +684,8 @@ EOF
           if command -v inkscape >/dev/null 2>&1; then
             info "Trying Inkscape as a last resort..."
             png_output=$(inkscape --export-filename="$mermaid_img_dir/${imgfile}.png" \
-              --export-dpi=600 --export-background=white \
-              --export-width=2400 --export-height=1800 \
+              --export-dpi=300 --export-background=white \
+              --export-width=1600 --export-height=1200 \
               "$mermaid_img_dir/${imgfile}.svg" 2>&1)
             png_exit_code=$?
           fi
