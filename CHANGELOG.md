@@ -99,4 +99,4 @@ Converted to a composite action ([#35](https://github.com/innofactororg/markdown
 
 ## 0.1.0 (2022-09-28)
 
-Initial beta release. Release notes as recorded: "We have some outstanding LaTeX bug that need to be squashed, but a clean PDF is being produced that is shareable." No PR or commit list was recorded for this release.
+Initial beta release. No notes were recorded for this release beyond: "We have some outstanding Latex bug that need to be squashed, but a clean PDF is being produced that is shareable". Commit the tag points at: [3cf4553](https://github.com/innofactororg/markdown2pdf/commit/3cf4553) "Merge pull request #10 from innofactororg/feat-order".
