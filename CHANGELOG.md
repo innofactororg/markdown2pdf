@@ -6,13 +6,11 @@ Each release has a `## <version> (YYYY-MM-DD)` section. The Release workflow pub
 
 ## Unreleased
 
-### Fixed
+Not yet released. Commits on main since 3.0.3:
 
-- Update the actions cache version ([#39](https://github.com/innofactororg/markdown2pdf/pull/39))
-
-### Changed
-
-- README and CODEOWNERS updates
+- fix: update the actions cache version ([#39](https://github.com/innofactororg/markdown2pdf/pull/39), [1a162a2](https://github.com/innofactororg/markdown2pdf/commit/1a162a2))
+- Update CODEOWNERS ([56793c8](https://github.com/innofactororg/markdown2pdf/commit/56793c8))
+- Update README.md ([6268d92](https://github.com/innofactororg/markdown2pdf/commit/6268d92))
 
 ## 3.0.3 (2024-04-25)
 
@@ -25,19 +23,19 @@ Each release has a `## <version> (YYYY-MM-DD)` section. The Release workflow pub
 ### Added
 
 - Azure DevOps pipeline sample ([#36](https://github.com/innofactororg/markdown2pdf/pull/36))
-- Show debug step
-- Caching
-- Output for the PDF path
+- Show debug step ([#36](https://github.com/innofactororg/markdown2pdf/pull/36))
+- Caching ([#36](https://github.com/innofactororg/markdown2pdf/pull/36))
+- Output for the PDF path ([#36](https://github.com/innofactororg/markdown2pdf/pull/36))
 
 ### Fixed
 
-- Various shellcheck fixes
+- Various shellcheck fixes ([#36](https://github.com/innofactororg/markdown2pdf/pull/36))
 
 ## 3.0.1 (2024-02-15)
 
 ### Fixed
 
-- Adjust the position of the title on the first page. Long titles placed the title at the end of the page and the disclaimer on a new page.
+- Adjust the position of the title on the first page. Long titles placed the title at the end of the page and the disclaimer on a new page ([81313a4](https://github.com/innofactororg/markdown2pdf/commit/81313a4))
 
 ## 3.0.0 (2024-02-14)
 
@@ -45,19 +43,19 @@ Converted to a composite action ([#35](https://github.com/innofactororg/markdown
 
 ### Changed
 
-- Rename input `DefaultAuthor` to `MainAuthor`
-- Rename input `DefaultDescription` to `FirstChangeDescription`
-- Rename input `LimitVersionHistory` to `GitLogLimit`
-- Rename input `ForceDefault` to `SkipGitCommitHistory`
+- Rename input `DefaultAuthor` to `MainAuthor` ([#35](https://github.com/innofactororg/markdown2pdf/pull/35))
+- Rename input `DefaultDescription` to `FirstChangeDescription` ([#35](https://github.com/innofactororg/markdown2pdf/pull/35))
+- Rename input `LimitVersionHistory` to `GitLogLimit` ([#35](https://github.com/innofactororg/markdown2pdf/pull/35))
+- Rename input `ForceDefault` to `SkipGitCommitHistory` ([#35](https://github.com/innofactororg/markdown2pdf/pull/35))
 
 ### Added
 
-- Support for comment lines in order files
+- Support for comment lines in order files ([#35](https://github.com/innofactororg/markdown2pdf/pull/35))
 
 ### Fixed
 
-- Running the script from the markdown2pdf repo (composite action)
-- The last line of an order file was ignored when the file did not end with CRLF
+- Running the script from the markdown2pdf repo (composite action) ([#35](https://github.com/innofactororg/markdown2pdf/pull/35))
+- The last line of an order file was ignored when the file did not end with CRLF ([#35](https://github.com/innofactororg/markdown2pdf/pull/35))
 
 ## 2.0.1 (2024-02-13)
 
@@ -101,4 +99,4 @@ Converted to a composite action ([#35](https://github.com/innofactororg/markdown
 
 ## 0.1.0 (2022-09-28)
 
-Initial beta release. A clean PDF is produced and shareable; some LaTeX bugs remain to be fixed.
+Initial beta release. Release notes as recorded: "We have some outstanding LaTeX bug that need to be squashed, but a clean PDF is being produced that is shareable." No PR or commit list was recorded for this release.

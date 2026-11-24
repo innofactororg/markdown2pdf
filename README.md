@@ -335,6 +335,8 @@ Releases are cut from `main` with the **Release** workflow.
 1. Add a section to [CHANGELOG.md](./CHANGELOG.md) in the pull request that makes the change. Keep unreleased changes under `## Unreleased` and, when you release, rename it to `## <version> (YYYY-MM-DD)` (for example `## 3.0.4 (2026-11-20)`).
 2. After the pull request is merged, run the **Release** workflow (Actions tab) with the tag, for example `v3.0.4`.
 
+Every changelog bullet references its pull request (`#n`), and a backfilled entry must trace to a real PR or commit. Release tags are immutable: never move or recreate a version tag (only the floating major tag moves), and the workflow refuses to release a tag that already exists. The release page, the tag and the changelog must agree; the workflow verifies that the release body contains the changelog section.
+
 The changelog section becomes the release notes. The workflow fails before it creates the tag if the section is missing, and it announces the release in Microsoft Teams. Floating major tags such as `v3` are moved by hand.
 
 ## License

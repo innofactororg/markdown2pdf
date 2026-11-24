@@ -25,6 +25,22 @@ jobs:
         with:
           persist-credentials: false
 
+      # Version tags are immutable and release notes are audit evidence: never
+      # re-release an existing tag. Only the floating major tag moves (by hand).
+      - name: "Refuse to overwrite an existing release or tag"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          if gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "::error::A release for ${TAG} already exists. Release tags are immutable; use a new version."
+            exit 1
+          fi
+          if [ -n "$(git ls-remote --tags origin "refs/tags/${TAG}")" ]; then
+            echo "::error::The tag ${TAG} already exists. Release tags are immutable; use a new version."
+            exit 1
+          fi
+
       # Fails here, before the tag and release exist, when CHANGELOG.md has no
       # section for this version.
       # TODO: move to innofactororg once an org repo exists for these actions.
@@ -81,6 +97,20 @@ jobs:
           } > "${RUNNER_TEMP}/release-notes.md"
           gh release edit "${TAG}" --repo "${GITHUB_REPOSITORY}" \
             --notes-file "${RUNNER_TEMP}/release-notes.md"
+
+      - name: "Verify the release body matches CHANGELOG.md"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          NOTES: ${{ steps.changelog.outputs.notes }}
+        run: |
+          body=$(gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" --json body --jq .body | tr -d '\r')
+          notes=$(printf '%s' "${NOTES}" | tr -d '\r')
+          if [[ "${body}" != *"${notes}"* ]]; then
+            echo "::error::The body of release ${TAG} does not contain the CHANGELOG.md section."
+            exit 1
+          fi
+          echo "Release ${TAG} body contains the CHANGELOG.md section."
 
       - name: "Announce in Teams"
         uses: DamianFlynn/teams-release-notify@v1
