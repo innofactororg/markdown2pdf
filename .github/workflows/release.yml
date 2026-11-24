@@ -20,7 +20,79 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: "Checkout"
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # Fails here, before the tag and release exist, when CHANGELOG.md has no
+      # section for this version.
+      # TODO: move to innofactororg once an org repo exists for these actions.
+      - name: "Read the release notes from CHANGELOG.md"
+        id: changelog
+        uses: DamianFlynn/teams-release-notify/changelog@v1
+        with:
+          path: CHANGELOG.md
+          version: ${{ inputs.tag }}
+
+      - name: "Find the previous release"
+        id: previous
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          previous=$(gh api "repos/${GITHUB_REPOSITORY}/releases" --paginate \
+            --jq '.[] | select((.draft | not) and .tag_name != env.TAG) | .tag_name' | head -n 1)
+          server="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"
+          {
+            echo "tag=${previous}"
+            echo "sha=${GITHUB_SHA:0:7}"
+            echo "links<<EOF_LINKS"
+            echo "Release notes | ${server}/releases/tag/${TAG}"
+            echo "Changelog | ${server}/blob/${TAG}/CHANGELOG.md"
+            echo "README / usage | ${server}"
+            if [ -n "${previous}" ]; then
+              echo "Compare | ${server}/compare/${previous}...${TAG}"
+            fi
+            echo "EOF_LINKS"
+          } >> "$GITHUB_OUTPUT"
+
       - name: "Release"
         uses: innofactororg/code-release@v2
         with:
-          tag: ${{ github.event.inputs.tag }}
+          github-token: ${{ github.token }}
+          tag: ${{ inputs.tag }}
+
+      # code-release can only generate notes. Replace them with the changelog
+      # section so CHANGELOG.md is the single source of truth.
+      - name: "Replace the release notes with the changelog section"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          PREVIOUS: ${{ steps.previous.outputs.tag }}
+          NOTES: ${{ steps.changelog.outputs.notes }}
+        run: |
+          {
+            printf '%s\n' "${NOTES}"
+            if [ -n "${PREVIOUS}" ]; then
+              printf '\n**Full Changelog**: %s/%s/compare/%s...%s\n' \
+                "${GITHUB_SERVER_URL}" "${GITHUB_REPOSITORY}" "${PREVIOUS}" "${TAG}"
+            fi
+          } > "${RUNNER_TEMP}/release-notes.md"
+          gh release edit "${TAG}" --repo "${GITHUB_REPOSITORY}" \
+            --notes-file "${RUNNER_TEMP}/release-notes.md"
+
+      - name: "Announce in Teams"
+        uses: DamianFlynn/teams-release-notify@v1
+        with:
+          webhook-url: ${{ secrets.TEAMS_RELEASES_WEBHOOK }}
+          heading: "${{ steps.previous.outputs.tag != '' && format('Released: {0} {1}', github.event.repository.name, inputs.tag) || format('New tool: {0} {1}', github.event.repository.name, inputs.tag) }}"
+          subtitle: ${{ github.event.repository.description }}
+          facts: |
+            Repository | ${{ github.repository }}
+            Version | ${{ inputs.tag }}
+            Previous version | ${{ steps.previous.outputs.tag || 'none (first release)' }}
+            Released by | ${{ github.actor }}
+            Commit | ${{ steps.previous.outputs.sha }}
+          notes: ${{ steps.changelog.outputs.notes }}
+          links: ${{ steps.previous.outputs.links }}

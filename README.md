@@ -328,6 +328,15 @@ jobs:
           RetentionDays: 5
 ```
 
+## Releasing
+
+Releases are cut from `main` with the **Release** workflow.
+
+1. Add a section to [CHANGELOG.md](./CHANGELOG.md) in the pull request that makes the change. Keep unreleased changes under `## Unreleased` and, when you release, rename it to `## <version> (YYYY-MM-DD)` (for example `## 3.0.4 (2026-11-20)`).
+2. After the pull request is merged, run the **Release** workflow (Actions tab) with the tag, for example `v3.0.4`.
+
+The changelog section becomes the release notes. The workflow fails before it creates the tag if the section is missing, and it announces the release in Microsoft Teams. Floating major tags such as `v3` are moved by hand.
+
 ## License
 
 The code and documentation in this project are released under the [BSD 3-Clause License](./LICENSE).
